@@ -1,3 +1,5 @@
+console.log("Global Error Handler Hit");
+
 const logger = require("../config/logger");
 
 const cookieOptions = require("../utils/cookieOptions");

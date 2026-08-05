@@ -5,15 +5,12 @@ const register = (user, callback) => {
     const sql = `
         INSERT INTO users
         (
-            username,
-            first_name,
-            last_name,
+            name,
             email,
-            mobile_number,
-            date_of_birth,
-            password_hash
+            password,
+            role
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, COALESCE(?, 'user'))
     `;
 
     db.query(
@@ -21,10 +18,8 @@ const register = (user, callback) => {
         [
             user.name,
             user.email,
-            user.password_hash,
-            user.email,
-            user.role,
-    
+            user.password,
+            user.role
         ],
         callback
     );
@@ -47,12 +42,10 @@ const findById = (id, callback) => {
         `
         SELECT
             id,
-            username,
-            first_name,
-            last_name,
+            name,
             email,
-            mobile_number,
-            date_of_birth,
+            password,
+            role,
             created_at,
             updated_at
         FROM users
@@ -71,12 +64,10 @@ const findAll = (callback) => {
         `
         SELECT
             id,
-            username,
-            first_name,
-            last_name,
+            name,
             email,
-            mobile_number,
-            date_of_birth,
+            password,
+            role,
             created_at,
             updated_at
         FROM users

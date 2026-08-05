@@ -4,8 +4,6 @@ const config = require("../config/config");
 
 const userModel = require("../models/userModel");
 
-const refreshTokenModel = require("../models/refreshTokenModel");
-
 const jwt = require("../utils/jwt");
 
 const AppError = require("../utils/AppError");
@@ -15,19 +13,14 @@ const logger = require("../config/logger");
 
 
 
-//        ----------register user--------------
-
 const registerUser = async (user) => {
-
 
     const hashedPassword = await bcrypt.hash(
         user.password,
         Number(config.bcryptSaltRounds)
     );
 
-    user.password_hash = hashedPassword;
-
-    delete user.password;
+    user.password = hashedPassword;
 
     return new Promise((resolve, reject) => {
 
@@ -54,8 +47,27 @@ const registerUser = async (user) => {
 
 
 
-module.exports = {
-    registerUser,
+//        ----------login user--------------
 
+const loginUser = async (email, password) => {
+    return new Promise((resolve, reject) => {
+        userModel.findByEmail(email, async (err, rows) => {
+            if (err) return reject(err);
+            if (rows.length === 0) return reject(new AppError("Invalid email or password", 401));
+
+            const user = rows[0];
+
+            const isPasswordMatch = await bcrypt.compare(password, user.password);
+            if (!isPasswordMatch) return reject(new AppError("Invalid email or password", 401));
+
+            const accessToken = jwt.generateAccessToken(user);
+
+            resolve({ accessToken, user });
+        });
+    });
 };
 
+module.exports = {
+    registerUser,
+    loginUser
+};

@@ -1,7 +1,5 @@
 const userModel = require("../models/userModel");
 
-const refreshTokenModel = require("../models/refreshTokenModel");
-
 const AppError = require("../utils/AppError");
 
 const getUsers = async () => {
@@ -25,22 +23,15 @@ const deleteUserAccount = async (userId) => {
 
     return new Promise((resolve, reject) => {
 
-        refreshTokenModel.deleteUserRefreshTokens(userId, (tokenErr) => {
+        userModel.deleteById(userId, (err, result) => {
 
-            if (tokenErr)
-                return reject(tokenErr);
+            if (err)
+                return reject(err);
 
-            userModel.deleteById(userId, (err, result) => {
+            if (result.affectedRows === 0)
+                return reject(new AppError("User not found", 404));
 
-                if (err)
-                    return reject(err);
-
-                if (result.affectedRows === 0)
-                    return reject(new AppError("User not found", 404));
-
-                resolve();
-
-            });
+            resolve();
 
         });
 

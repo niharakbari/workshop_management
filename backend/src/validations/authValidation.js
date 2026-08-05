@@ -7,9 +7,9 @@ const registerValidation = [
         .notEmpty()
         .withMessage("Name is required")
         .isLength({ min: 3, max: 30 })
-        .withMessage("Username must be between 3 and 30 characters")
+        .withMessage("Name must be between 3 and 30 characters")
         .matches(/^[A-Za-z\s]+$/)
-        .withMessage("Username can only contain letters, numbers and underscores"),
+        .withMessage("Name can only contain letters, numbers and underscores"),
 
 
     body("email")
@@ -19,13 +19,6 @@ const registerValidation = [
         .isEmail()
         .withMessage("Invalid email address")
         .normalizeEmail(),
-
-    body("mobile_number")
-        .trim()
-        .notEmpty()
-        .withMessage("Mobile number is required")
-        .matches(/^[6-9]\d{9}$/)
-        .withMessage("Mobile number must be exactly 10 digits"),
 
 
 
@@ -45,7 +38,19 @@ const registerValidation = [
 
 ];
 
+const loginValidation = [
+    body("email")
+        .trim()
+        .notEmpty()
+        .withMessage("Email is required")
+        .isEmail()
+        .withMessage("Invalid email address")
+        .normalizeEmail(),
 
+    body("password")
+        .notEmpty()
+        .withMessage("Password is required")
+];
 
 module.exports = {
     registerValidation,

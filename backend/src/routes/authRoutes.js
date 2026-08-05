@@ -18,5 +18,29 @@ router.post(
     authController.registerUser
 );
 
+router.post(
+    "/login",
+    loginValidation,
+    validationMiddleware,
+    authController.loginUser
+);
+
+const { protect } = require("../middlewares/authMiddleware");
+
+router.get(
+    "/me",
+    protect,
+    authController.getMe
+);
+
+router.post(
+    "/refresh",
+    authController.refreshToken
+);
+
+router.post(
+    "/logout",
+    authController.logoutUser
+);
 
 module.exports = router;

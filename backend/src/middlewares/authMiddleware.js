@@ -13,13 +13,7 @@ const protect = (req, res, next) => {
     const token = authHeader.split(" ")[1];
 
     try {
-        console.log(req.headers.authorization);
-
-        console.log(token);
-
         const decoded = jwt.verifyAccessToken(token);
-
-        console.log(decoded);
 
         userModel.findById(decoded.id, (err, rows) => {
 
@@ -37,13 +31,22 @@ const protect = (req, res, next) => {
 
     } catch(err) {
 
-          console.log(err);
           next(new AppError("Invalid or expired token", 401));
 
     }
 
 };
 
+const restrictTo = (...roles) => {
+    return (req, res, next) => {
+        if (!req.user || !roles.includes(req.user.role)) {
+            return next(new AppError("You do not have permission to perform this action", 403));
+        }
+        next();
+    };
+};
+
 module.exports = {
-    protect
+    protect,
+    restrictTo
 };
