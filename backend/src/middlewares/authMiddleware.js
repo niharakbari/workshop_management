@@ -23,7 +23,9 @@ const protect = (req, res, next) => {
             if (rows.length === 0)
                 return next(new AppError("User not found", 404));
 
-            req.user = rows[0];
+            const user = rows[0];
+            delete user.password;
+            req.user = user;
 
             next();
 

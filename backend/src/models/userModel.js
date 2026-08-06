@@ -10,20 +10,28 @@ const register = (user, callback) => {
             password,
             role
         )
-        VALUES (?, ?, ?, COALESCE(?, 'user'))
+        VALUES (?, ?, ?, 'VIEWER')
     `;
 
+    // Notice we ignore user.role and hardcode 'VIEWER' to prevent privilege escalation!
     db.query(
         sql,
         [
             user.name,
             user.email,
-            user.password,
-            user.role
+            user.password
         ],
         callback
     );
 
+};
+
+const updateRole = (id, newRole, callback) => {
+    db.query(
+        "UPDATE users SET role = ? WHERE id = ?",
+        [newRole, id],
+        callback
+    );
 };
 
 const findByEmail = (email, callback) => {
@@ -90,6 +98,7 @@ const deleteById = (id, callback) => {
 
 module.exports = {
     register,
+    updateRole,
     findByEmail,
     findById,
     findAll,
