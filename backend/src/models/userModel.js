@@ -66,10 +66,8 @@ const findById = (id, callback) => {
 
 };
 
-const findAll = (callback) => {
-
-    db.query(
-        `
+const findAll = (filters, callback) => {
+    let sql = `
         SELECT
             id,
             name,
@@ -79,11 +77,40 @@ const findAll = (callback) => {
             created_at,
             updated_at
         FROM users
-        ORDER BY id ASC
-        `,
-        callback
-    );
+        WHERE 1=1
+    `;
+    const params = [];
 
+    if (filters.role) {
+        sql += " AND role = ?";
+        params.push(filters.role);
+    }
+    
+    if (filters.search) {
+        sql += " AND (name LIKE ? OR email LIKE ?)";
+        const searchTerm = `%${filters.search}%`;
+        params.push(searchTerm, searchTerm);
+    }
+
+    sql += " ORDER BY id ASC";
+
+    if (filters.limit && filters.offset !== undefined) {
+        sql += " LIMIT ? OFFSET ?";
+        params.push(parseInt(filters.limit), parseInt(filters.offset));
+    }
+
+    db.query(sql, params, callback);
+};
+
+const countAdmins = (callback) => {
+    db.query(
+        "SELECT COUNT(*) as count FROM users WHERE role = 'ADMIN'",
+        [],
+        (err, results) => {
+            if (err) return callback(err);
+            callback(null, results[0].count);
+        }
+    );
 };
 
 const deleteById = (id, callback) => {
@@ -102,5 +129,6 @@ module.exports = {
     findByEmail,
     findById,
     findAll,
+    countAdmins,
     deleteById
 };

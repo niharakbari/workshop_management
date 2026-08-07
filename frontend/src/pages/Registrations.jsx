@@ -9,14 +9,16 @@ import Modal from '../components/common/Modal';
 import Spinner from '../components/common/Spinner';
 import RegistrationForm from '../components/registrations/RegistrationForm';
 import { Plus, XCircle, Trash2, Filter } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
-const Registrations = () => {
+const Registrations = ({ workshopId = null }) => {
+    const navigate = useNavigate();
     const { user } = useAuth();
     const isAdmin = user?.role === 'ADMIN';
     const { registrations, isLoading, fetchRegistrations, createRegistration, cancelRegistration, deleteRegistration, updateStatus } = useRegistrations();
     const { workshops, fetchWorkshops } = useWorkshops();
     
-    const [workshopFilter, setWorkshopFilter] = useState('');
+    const [workshopFilter, setWorkshopFilter] = useState(workshopId || '');
     const [statusFilter, setStatusFilter] = useState('');
     
     // Modal states
@@ -48,9 +50,9 @@ const Registrations = () => {
 
     const getStatusBadge = (status) => {
         switch (status) {
-            case 'REGISTERED': return <Badge type="success">Registered</Badge>;
-            case 'WAITLISTED': return <Badge type="warning">Waitlisted</Badge>;
-            case 'CANCELLED': return <Badge type="danger">Cancelled</Badge>;
+            case 'REGISTERED': return <Badge type="REGISTERED">Registered</Badge>;
+            case 'WAITLISTED': return <Badge type="WAITLISTED">Waitlisted</Badge>;
+            case 'CANCELLED': return <Badge type="CANCELLED">Cancelled</Badge>;
             default: return <Badge type="neutral">{status}</Badge>;
         }
     };
@@ -82,7 +84,7 @@ const Registrations = () => {
         {
             header: 'Actions',
             render: (row) => (
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', gap: '0.5rem' }} onClick={(e) => e.stopPropagation()}>
                     {isAdmin && (
                         <>
                             {row.status !== 'CANCELLED' && (
@@ -105,17 +107,19 @@ const Registrations = () => {
 
     return (
         <div>
-            <div className="page-header">
-                <h2 className="page-title">Registrations</h2>
-                {isAdmin && (
-                    <Button onClick={() => setIsFormOpen(true)}>
-                        <Plus size={18} /> New Registration
-                    </Button>
-                )}
-            </div>
+            {!workshopId && (
+                <div className="page-header">
+                    <div>
+                        <h2 className="page-title">Registrations</h2>
+                        <div className="page-subtitle">View and manage registrations.</div>
+                    </div>
+                    {/* New Registration Button intentionally removed per requirements to not manually create registrations */}
+                </div>
+            )}
 
-            <div className="filters-bar">
-                <div className="input-wrapper">
+            <div className="filters-bar" style={{ marginTop: workshopId ? 0 : undefined }}>
+                {!workshopId && (
+                    <div className="input-wrapper">
                     <Filter size={18} style={{ position: 'absolute', left: '10px', color: 'var(--text-light)' }} />
                     <select 
                         className="form-input" 
@@ -129,6 +133,7 @@ const Registrations = () => {
                         ))}
                     </select>
                 </div>
+                )}
                 
                 <div className="input-wrapper">
                     <Filter size={18} style={{ position: 'absolute', left: '10px', color: 'var(--text-light)' }} />
@@ -153,6 +158,7 @@ const Registrations = () => {
                     columns={columns} 
                     data={registrations} 
                     emptyMessage="No registrations found."
+                    onRowClick={(row) => navigate(`/registrations/${row.id}`)}
                 />
             )}
 

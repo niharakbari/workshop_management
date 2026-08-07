@@ -8,8 +8,10 @@ import Spinner from '../components/common/Spinner';
 import ParticipantForm from '../components/participants/ParticipantForm';
 import CSVUploadModal from '../components/participants/CSVUploadModal';
 import { Plus, Edit2, Trash2, Search, UploadCloud, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
-const Participants = () => {
+const Participants = ({ workshopId = null }) => {
+    const navigate = useNavigate();
     const { user } = useAuth();
     const isAdmin = user?.role === 'ADMIN';
     const { 
@@ -21,7 +23,7 @@ const Participants = () => {
         updateParticipant, 
         deleteParticipant, 
         importCSV 
-    } = useParticipants();
+    } = useParticipants(workshopId);
     
     const [search, setSearch] = useState('');
     const [page, setPage] = useState(1);
@@ -93,7 +95,7 @@ const Participants = () => {
         {
             header: 'Actions',
             render: (row) => (
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', gap: '0.5rem' }} onClick={(e) => e.stopPropagation()}>
                     {isAdmin && (
                         <>
                             <Button size="sm" variant="secondary" onClick={() => {
@@ -117,22 +119,41 @@ const Participants = () => {
 
     return (
         <div>
-            <div className="page-header">
-                <h2 className="page-title">Participants</h2>
-                {isAdmin && (
-                    <div className="page-actions">
-                        <Button variant="secondary" onClick={() => setIsCsvOpen(true)}>
-                            <UploadCloud size={18} /> Import CSV
-                        </Button>
-                        <Button onClick={() => {
-                            setSelectedParticipant(null);
-                            setIsFormOpen(true);
-                        }}>
-                            <Plus size={18} /> Add Participant
-                        </Button>
+            {!workshopId && (
+                <div className="page-header">
+                    <div>
+                        <h2 className="page-title">Participants</h2>
+                        <div className="page-subtitle">Manage workshop participants.</div>
                     </div>
-                )}
-            </div>
+                    {isAdmin && (
+                        <div className="page-actions">
+                            <Button variant="secondary" onClick={() => setIsCsvOpen(true)}>
+                                <UploadCloud size={18} /> Import CSV
+                            </Button>
+                            <Button onClick={() => {
+                                setSelectedParticipant(null);
+                                setIsFormOpen(true);
+                            }}>
+                                <Plus size={18} /> Add Participant
+                            </Button>
+                        </div>
+                    )}
+                </div>
+            )}
+            
+            {workshopId && isAdmin && (
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginBottom: '1rem' }}>
+                    <Button variant="secondary" onClick={() => setIsCsvOpen(true)}>
+                        <UploadCloud size={18} /> Import CSV
+                    </Button>
+                    <Button onClick={() => {
+                        setSelectedParticipant(null);
+                        setIsFormOpen(true);
+                    }}>
+                        <Plus size={18} /> Add Participant
+                    </Button>
+                </div>
+            )}
 
             <div className="filters-bar">
                 <div className="input-wrapper search-input">
@@ -158,7 +179,18 @@ const Participants = () => {
                     <Table 
                         columns={columns} 
                         data={participants} 
-                        emptyMessage="No participants found."
+                        emptyMessage="Start by adding a participant or importing a CSV file."
+                        onRowClick={(row) => navigate(`/participants/${row.id}`)}
+                        emptyAction={
+                            isAdmin && (
+                                <Button onClick={() => {
+                                    setSelectedParticipant(null);
+                                    setIsFormOpen(true);
+                                }}>
+                                    <Plus size={18} /> Add Participant
+                                </Button>
+                            )
+                        }
                     />
                     
                     {/* Pagination Controls */}

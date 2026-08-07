@@ -36,6 +36,12 @@ const findAll = (filters, callback) => {
         params.push(searchTerm, searchTerm, searchTerm, searchTerm);
     }
 
+    if (filters.workshop_id) {
+        // Find participants who have a registration for this workshop
+        sql += " AND id IN (SELECT participant_id FROM registrations WHERE workshop_id = ?)";
+        params.push(filters.workshop_id);
+    }
+
     sql += " ORDER BY created_at DESC";
 
     if (filters.limit && filters.offset !== undefined) {

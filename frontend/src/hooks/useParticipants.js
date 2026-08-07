@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import * as participantApi from '../api/participantApi';
 import toast from 'react-hot-toast';
 
-export const useParticipants = () => {
+export const useParticipants = (workshopId = null) => {
     const [participants, setParticipants] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -12,7 +12,7 @@ export const useParticipants = () => {
         setIsLoading(true);
         setError(null);
         try {
-            const data = await participantApi.getParticipants(search, limit, offset);
+            const data = await participantApi.getParticipants(search, limit, offset, workshopId);
             setParticipants(data.data);
             setTotalResults(data.results || data.data.length);
             return data.data;
@@ -29,7 +29,7 @@ export const useParticipants = () => {
     const createParticipant = async (data) => {
         setIsLoading(true);
         try {
-            await participantApi.createParticipant(data);
+            await participantApi.createParticipant(data, workshopId);
             toast.success('Participant added successfully');
             await fetchParticipants();
             return true;
@@ -74,7 +74,7 @@ export const useParticipants = () => {
     const importCSV = async (file) => {
         setIsLoading(true);
         try {
-            const result = await participantApi.importParticipants(file);
+            const result = await participantApi.importParticipants(file, workshopId);
             toast.success(`Import complete! ${result.data.successCount} added.`);
             if (result.data.failureCount > 0) {
                 toast.error(`${result.data.failureCount} rows failed. Check report.`);

@@ -7,6 +7,12 @@ exports.createAnnouncement = async (req, res, next) => {
             created_by: req.user.id
         };
         const announcement = await announcementService.createAnnouncement(announcementData);
+        
+        const io = req.app.get('io');
+        if (io) {
+            io.to(`workshop_${announcementData.workshop_id}`).emit('new_announcement', announcement);
+        }
+
         res.status(201).json({
             success: true,
             message: "Announcement created successfully",
@@ -48,6 +54,15 @@ exports.getAnnouncementById = async (req, res, next) => {
 exports.updateAnnouncement = async (req, res, next) => {
     try {
         await announcementService.updateAnnouncement(req.params.id, req.body);
+        
+        // We'd ideally need workshop_id here, but simple broadcast works or we fetch the announcement first.
+        // For now, let's just emit a global or generic event, or we can fetch it.
+        const announcement = await announcementService.getAnnouncementById(req.params.id);
+        const io = req.app.get('io');
+        if (io && announcement) {
+            io.to(`workshop_${announcement.workshop_id}`).emit('announcement_updated', announcement);
+        }
+
         res.status(200).json({
             success: true,
             message: "Announcement updated successfully"
@@ -59,7 +74,14 @@ exports.updateAnnouncement = async (req, res, next) => {
 
 exports.deleteAnnouncement = async (req, res, next) => {
     try {
+        const announcement = await announcementService.getAnnouncementById(req.params.id);
         await announcementService.deleteAnnouncement(req.params.id);
+        
+        const io = req.app.get('io');
+        if (io && announcement) {
+            io.to(`workshop_${announcement.workshop_id}`).emit('announcement_deleted', req.params.id);
+        }
+
         res.status(200).json({
             success: true,
             message: "Announcement deleted successfully"

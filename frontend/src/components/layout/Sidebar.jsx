@@ -1,10 +1,12 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, CalendarDays, ClipboardList } from 'lucide-react';
+import { LayoutDashboard, Users, CalendarDays, ClipboardList, LogOut, UserCog } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useDashboard } from '../../hooks/useDashboard';
 
 const Sidebar = () => {
     const { user } = useAuth();
+    const { logout } = useDashboard();
     
     // Some routes might be restricted entirely. For now, all roles can read.
     const navItems = [
@@ -35,11 +37,32 @@ const Sidebar = () => {
                         </NavLink>
                     );
                 })}
+                {user?.role === 'ADMIN' && (
+                    <NavLink 
+                        to="/users" 
+                        className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+                    >
+                        <UserCog size={18} />
+                        <span>System Users</span>
+                    </NavLink>
+                )}
             </nav>
 
             <div className="sidebar-footer">
-                <div style={{ fontSize: '0.875rem', fontWeight: 600 }}>{user?.name}</div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{user?.role}</div>
+                <div className="profile-card">
+                    <div className="profile-avatar">
+                        {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                    </div>
+                    <div className="profile-info">
+                        <span className="profile-name">{user?.name}</span>
+                        <span className="profile-role">{user?.role}</span>
+                    </div>
+                </div>
+                
+                <button onClick={logout} className="btn-sidebar-logout">
+                    <LogOut size={18} />
+                    <span>Logout</span>
+                </button>
             </div>
         </aside>
     );

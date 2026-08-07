@@ -4,12 +4,11 @@ const { protect, restrictTo } = require("../middlewares/authMiddleware");
 
 const router = express.Router();
 
-// Only ADMIN can promote users
-router.patch(
-    "/:id/promote",
-    protect,
-    restrictTo("ADMIN"),
-    userController.promoteToStaff
-);
+// Only ADMIN can manage users
+router.use(protect);
+router.use(restrictTo("ADMIN"));
+
+router.get("/", userController.getUsers);
+router.patch("/:id/role", userController.updateUserRole);
 
 module.exports = router;

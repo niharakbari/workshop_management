@@ -17,7 +17,9 @@ exports.getAllRegistrations = async (req, res, next) => {
     try {
         const filters = {
             workshop_id: req.query.workshop_id,
-            status: req.query.status
+            status: req.query.status,
+            participant_id: req.query.participant_id,
+            search: req.query.search
         };
         const registrations = await registrationService.getAllRegistrations(filters);
         res.status(200).json({

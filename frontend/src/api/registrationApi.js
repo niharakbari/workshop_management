@@ -1,9 +1,11 @@
 import axiosInstance from './axios';
 
-export const getRegistrations = async (workshop_id = '', status = '') => {
+export const getRegistrations = async (workshop_id = '', status = '', participant_id = '', search = '') => {
     const params = new URLSearchParams();
     if (workshop_id) params.append('workshop_id', workshop_id);
     if (status) params.append('status', status);
+    if (participant_id) params.append('participant_id', participant_id);
+    if (search) params.append('search', search);
     
     const response = await axiosInstance.get(`/api/registrations?${params.toString()}`);
     return response.data;

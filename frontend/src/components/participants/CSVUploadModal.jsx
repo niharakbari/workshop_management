@@ -40,9 +40,22 @@ const CSVUploadModal = ({ isOpen, onClose, onUpload, isLoading }) => {
                     <div style={{ textAlign: 'center', padding: '2rem', border: '2px dashed var(--surface-border)', borderRadius: 'var(--radius-md)', marginBottom: '1rem' }}>
                         <UploadCloud size={48} style={{ color: 'var(--text-light)', marginBottom: '1rem' }} />
                         <p style={{ marginBottom: '1rem' }}>Select a CSV file containing participant records.</p>
-                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
-                            Required columns: first_name, email, mobile
-                        </p>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '1rem', textAlign: 'left', display: 'inline-block' }}>
+                            <p style={{ marginBottom: '0.25rem' }}>Required columns:</p>
+                            <ul style={{ listStyleType: 'disc', paddingLeft: '1.5rem', marginBottom: '0.5rem' }}>
+                                <li>first_name *</li>
+                                <li>last_name *</li>
+                                <li>email *</li>
+                                <li>mobile *</li>
+                                <li>organization *</li>
+                            </ul>
+                            <small>* indicates a required field.</small>
+                        </div>
+                        <div style={{ marginBottom: '1rem' }}>
+                            <a href="/sample_participants.csv" download style={{ fontSize: '0.75rem', color: 'var(--primary)', textDecoration: 'underline' }}>
+                                Download Sample CSV
+                            </a>
+                        </div>
                         <input 
                             type="file" 
                             accept=".csv,text/csv" 

@@ -22,20 +22,39 @@ const findById = (id, callback) => {
 };
 
 const findAll = (filters, callback) => {
-    let sql = "SELECT * FROM registrations WHERE 1=1";
+    let sql = `
+        SELECT r.*, 
+               w.title as workshop_title, 
+               p.first_name, p.last_name, p.email, p.mobile 
+        FROM registrations r
+        LEFT JOIN workshops w ON r.workshop_id = w.id
+        LEFT JOIN participants p ON r.participant_id = p.id
+        WHERE 1=1
+    `;
     const params = [];
 
     if (filters.workshop_id) {
-        sql += " AND workshop_id = ?";
+        sql += " AND r.workshop_id = ?";
         params.push(filters.workshop_id);
     }
     
     if (filters.status) {
-        sql += " AND status = ?";
+        sql += " AND r.status = ?";
         params.push(filters.status);
     }
+    
+    if (filters.participant_id) {
+        sql += " AND r.participant_id = ?";
+        params.push(filters.participant_id);
+    }
+    
+    if (filters.search) {
+        sql += " AND (r.registration_code LIKE ? OR p.first_name LIKE ? OR p.last_name LIKE ? OR p.email LIKE ? OR p.mobile LIKE ?)";
+        const searchTerm = `%${filters.search}%`;
+        params.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
+    }
 
-    sql += " ORDER BY registered_at DESC";
+    sql += " ORDER BY r.registered_at DESC";
 
     db.query(sql, params, callback);
 };

@@ -8,12 +8,17 @@ import Input from '../common/Input';
 const schema = yup.object().shape({
     title: yup.string().required('Title is required'),
     description: yup.string().required('Description is required'),
-    date: yup.date().required('Workshop date is required').typeError('Invalid date'),
-    registration_start_date: yup.date().required('Registration start date is required').typeError('Invalid date'),
-    registration_end_date: yup.date()
+    venue: yup.string().required('Venue is required'),
+    start_datetime: yup.date().required('Workshop start date is required').typeError('Invalid date'),
+    end_datetime: yup.date()
+        .required('Workshop end date is required')
+        .min(yup.ref('start_datetime'), 'End date must be after start date')
+        .typeError('Invalid date'),
+    registration_start: yup.date().required('Registration start date is required').typeError('Invalid date'),
+    registration_end: yup.date()
         .required('Registration end date is required')
-        .min(yup.ref('registration_start_date'), 'End date must be after start date')
-        .max(yup.ref('date'), 'Registration must end before workshop starts')
+        .min(yup.ref('registration_start'), 'Registration end must be after start')
+        .max(yup.ref('start_datetime'), 'Registration must end before workshop starts')
         .typeError('Invalid date'),
     capacity: yup.number().positive('Capacity must be positive').integer().required('Capacity is required').typeError('Must be a number')
 });
@@ -24,9 +29,11 @@ const WorkshopForm = ({ initialData, onSubmit, isLoading, onCancel }) => {
         defaultValues: {
             title: '',
             description: '',
-            date: '',
-            registration_start_date: '',
-            registration_end_date: '',
+            venue: '',
+            start_datetime: '',
+            end_datetime: '',
+            registration_start: '',
+            registration_end: '',
             capacity: ''
         }
     });
@@ -35,9 +42,10 @@ const WorkshopForm = ({ initialData, onSubmit, isLoading, onCancel }) => {
         if (initialData) {
             reset({
                 ...initialData,
-                date: initialData.date ? new Date(initialData.date).toISOString().slice(0, 16) : '',
-                registration_start_date: initialData.registration_start_date ? new Date(initialData.registration_start_date).toISOString().slice(0, 16) : '',
-                registration_end_date: initialData.registration_end_date ? new Date(initialData.registration_end_date).toISOString().slice(0, 16) : ''
+                start_datetime: initialData.start_datetime ? new Date(initialData.start_datetime).toISOString().slice(0, 16) : '',
+                end_datetime: initialData.end_datetime ? new Date(initialData.end_datetime).toISOString().slice(0, 16) : '',
+                registration_start: initialData.registration_start ? new Date(initialData.registration_start).toISOString().slice(0, 16) : '',
+                registration_end: initialData.registration_end ? new Date(initialData.registration_end).toISOString().slice(0, 16) : ''
             });
         }
     }, [initialData, reset]);
@@ -45,9 +53,10 @@ const WorkshopForm = ({ initialData, onSubmit, isLoading, onCancel }) => {
     const submitForm = (data) => {
         onSubmit({
             ...data,
-            date: new Date(data.date).toISOString(),
-            registration_start_date: new Date(data.registration_start_date).toISOString(),
-            registration_end_date: new Date(data.registration_end_date).toISOString()
+            start_datetime: new Date(data.start_datetime).toISOString(),
+            end_datetime: new Date(data.end_datetime).toISOString(),
+            registration_start: new Date(data.registration_start).toISOString(),
+            registration_end: new Date(data.registration_end).toISOString()
         });
     };
 
@@ -72,6 +81,13 @@ const WorkshopForm = ({ initialData, onSubmit, isLoading, onCancel }) => {
             </div>
 
             <Input 
+                label="Venue"
+                {...register('venue')}
+                error={errors.venue?.message}
+                placeholder="e.g. Main Auditorium or Online (Zoom)"
+            />
+
+            <Input 
                 label="Capacity"
                 type="number"
                 {...register('capacity')}
@@ -80,24 +96,31 @@ const WorkshopForm = ({ initialData, onSubmit, isLoading, onCancel }) => {
             />
 
             <Input 
-                label="Workshop Date & Time"
+                label="Workshop Start Date & Time"
                 type="datetime-local"
-                {...register('date')}
-                error={errors.date?.message}
+                {...register('start_datetime')}
+                error={errors.start_datetime?.message}
+            />
+
+            <Input 
+                label="Workshop End Date & Time"
+                type="datetime-local"
+                {...register('end_datetime')}
+                error={errors.end_datetime?.message}
             />
 
             <Input 
                 label="Registration Start Date"
                 type="datetime-local"
-                {...register('registration_start_date')}
-                error={errors.registration_start_date?.message}
+                {...register('registration_start')}
+                error={errors.registration_start?.message}
             />
 
             <Input 
                 label="Registration End Date"
                 type="datetime-local"
-                {...register('registration_end_date')}
-                error={errors.registration_end_date?.message}
+                {...register('registration_end')}
+                error={errors.registration_end?.message}
             />
 
             <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>

@@ -3,7 +3,8 @@ const AppError = require("../utils/AppError");
 
 exports.createParticipant = async (req, res, next) => {
     try {
-        const participant = await participantService.createParticipant(req.body);
+        const { workshop_id, ...participantData } = req.body;
+        const participant = await participantService.createParticipant(participantData, workshop_id);
         res.status(201).json({
             success: true,
             message: "Participant created successfully",
@@ -20,7 +21,8 @@ exports.importParticipants = async (req, res, next) => {
             return next(new AppError("Please upload a CSV file", 400));
         }
 
-        const importResult = await participantService.importParticipantsFromCSV(req.file.path);
+        const workshop_id = req.body.workshop_id || null;
+        const importResult = await participantService.importParticipantsFromCSV(req.file.path, workshop_id);
         
         res.status(200).json({
             success: true,
@@ -36,6 +38,7 @@ exports.getAllParticipants = async (req, res, next) => {
     try {
         const filters = {
             search: req.query.search,
+            workshop_id: req.query.workshop_id,
             limit: req.query.limit,
             offset: req.query.offset
         };

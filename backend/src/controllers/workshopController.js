@@ -3,10 +3,20 @@ const AppError = require("../utils/AppError");
 const fs = require("fs");
 const path = require("path");
 
+// Helper to safely convert an ISO string or any valid date string into MySQL YYYY-MM-DD HH:mm:ss format
+const toMySQLDatetime = (dateString) => {
+    if (!dateString) return null;
+    return new Date(dateString).toISOString().slice(0, 19).replace('T', ' ');
+};
+
 exports.createWorkshop = (req, res, next) => {
-    // 1. Assign the creator ID from the token (which is already verified by protect middleware)
+    // 1. Assign the creator ID and parse datetimes
     const workshopData = {
         ...req.body,
+        start_datetime: toMySQLDatetime(req.body.start_datetime),
+        end_datetime: toMySQLDatetime(req.body.end_datetime),
+        registration_start: toMySQLDatetime(req.body.registration_start),
+        registration_end: toMySQLDatetime(req.body.registration_end),
         created_by: req.user.id
     };
 
@@ -63,8 +73,14 @@ exports.updateWorkshop = (req, res, next) => {
             return next(new AppError("Workshop not found", 404));
         }
 
+        const updates = { ...req.body };
+        if (updates.start_datetime) updates.start_datetime = toMySQLDatetime(updates.start_datetime);
+        if (updates.end_datetime) updates.end_datetime = toMySQLDatetime(updates.end_datetime);
+        if (updates.registration_start) updates.registration_start = toMySQLDatetime(updates.registration_start);
+        if (updates.registration_end) updates.registration_end = toMySQLDatetime(updates.registration_end);
+
         // 2. Perform Update
-        workshopModel.update(req.params.id, req.body, (updateErr, result) => {
+        workshopModel.update(req.params.id, updates, (updateErr, result) => {
             if (updateErr) return next(updateErr);
 
             res.status(200).json({

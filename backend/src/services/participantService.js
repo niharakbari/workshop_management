@@ -1,12 +1,38 @@
 const participantModel = require("../models/participantModel");
+const registrationService = require("./registrationService");
 const AppError = require("../utils/AppError");
 const fs = require("fs");
 const csv = require("csv-parser");
 
-const createParticipant = (participantData) => {
+const findOrCreateParticipant = (participantData) => {
     return new Promise((resolve, reject) => {
-        // Business logic: check duplicates first
         participantModel.findByEmailOrMobile(participantData.email, participantData.mobile, (err, rows) => {
+            if (err) return reject(err);
+            if (rows.length > 0) {
+                return resolve({ id: rows[0].id, ...rows[0] });
+            }
+            participantModel.create(participantData, (createErr, result) => {
+                if (createErr) return reject(createErr);
+                resolve({ id: result.insertId, ...participantData });
+            });
+        });
+    });
+};
+
+const createParticipant = (participantData, workshopId = null) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (workshopId) {
+                const participant = await findOrCreateParticipant(participantData);
+                try {
+                    await registrationService.registerParticipant({ participant_id: participant.id, workshop_id: workshopId });
+                } catch (regErr) {
+                    if (regErr.statusCode !== 400) throw regErr;
+                }
+                return resolve(participant);
+            }
+
+            participantModel.findByEmailOrMobile(participantData.email, participantData.mobile, (err, rows) => {
             if (err) return reject(err);
             if (rows.length > 0) {
                 return reject(new AppError("Participant with this email or mobile already exists", 400));
@@ -16,11 +42,14 @@ const createParticipant = (participantData) => {
                 if (createErr) return reject(createErr);
                 resolve({ id: result.insertId, ...participantData });
             });
-        });
+            });
+        } catch (error) {
+            reject(error);
+        }
     });
 };
 
-const importParticipantsFromCSV = (filePath) => {
+const importParticipantsFromCSV = (filePath, workshopId = null) => {
     return new Promise((resolve, reject) => {
         const results = [];
         const errors = [];
@@ -29,7 +58,7 @@ const importParticipantsFromCSV = (filePath) => {
             .pipe(csv())
             .on("data", (data) => {
                 // Ensure required fields
-                if (data.first_name && data.email && data.mobile) {
+                if (data.first_name && data.last_name && data.email && data.mobile && data.organization) {
                     results.push(data);
                 } else {
                     errors.push(`Row missing required fields: ${JSON.stringify(data)}`);
@@ -45,7 +74,16 @@ const importParticipantsFromCSV = (filePath) => {
                 // Process sequentially to handle DB transactions safely
                 for (const row of results) {
                     try {
-                        await createParticipant(row);
+                        if (workshopId) {
+                            const participant = await findOrCreateParticipant(row);
+                            try {
+                                await registrationService.registerParticipant({ participant_id: participant.id, workshop_id: workshopId });
+                            } catch (regErr) {
+                                if (regErr.statusCode !== 400) throw regErr;
+                            }
+                        } else {
+                            await createParticipant(row);
+                        }
                         successCount++;
                     } catch (err) {
                         failureCount++;

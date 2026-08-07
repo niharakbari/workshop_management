@@ -9,7 +9,12 @@ import Layout from '../components/layout/Layout';
 import Workshops from '../pages/Workshops';
 import WorkshopDetails from '../pages/WorkshopDetails';
 import Participants from '../pages/Participants';
+import ParticipantDetails from '../pages/ParticipantDetails';
 import Registrations from '../pages/Registrations';
+import RegistrationDetails from '../pages/RegistrationDetails';
+import CheckIn from '../pages/CheckIn';
+import CheckInHistory from '../pages/CheckInHistory';
+import Users from '../pages/Users';
 
 const AppRoutes = () => {
     return (
@@ -22,7 +27,12 @@ const AppRoutes = () => {
                 <Route path="workshops" element={<Workshops />} />
                 <Route path="workshops/:id" element={<WorkshopDetails />} />
                 <Route path="participants" element={<Participants />} />
+                <Route path="participants/:id" element={<ParticipantDetails />} />
                 <Route path="registrations" element={<Registrations />} />
+                <Route path="registrations/:id" element={<RegistrationDetails />} />
+                <Route path="check-in" element={<CheckIn />} />
+                <Route path="check-in/history" element={<CheckInHistory />} />
+                <Route path="users" element={<ProtectedRoute allowedRoles={['ADMIN']}><Users /></ProtectedRoute>} />
             </Route>
 
             <Route path="*" element={<Navigate to="/" replace />} />
