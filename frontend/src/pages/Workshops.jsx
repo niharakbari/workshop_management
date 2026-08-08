@@ -93,9 +93,9 @@ const Workshops = () => {
             accessor: 'title',
             render: (row) => (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    {row.banner_url ? (
+                    {row.banner_image ? (
                         <img 
-                            src={`http://localhost:3000${row.banner_url}`} 
+                            src={`http://localhost:3000${row.banner_image}`} 
                             alt="Banner" 
                             style={{ width: '40px', height: '40px', borderRadius: 'var(--radius-sm)', objectFit: 'cover' }} 
                         />
@@ -107,7 +107,7 @@ const Workshops = () => {
                     <div>
                         <div style={{ fontWeight: 600 }}>{row.title}</div>
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                            {row.start_datetime ? new Date(row.start_datetime).toLocaleDateString() : 'No date set'}
+                            {row.start_datetime ? new Date(row.start_datetime.replace(' ', 'T')).toLocaleDateString() : 'No date set'}
                         </div>
                     </div>
                 </div>

@@ -35,7 +35,14 @@ const imageFileFilter = (req, file, cb) => {
 
 // File validation logic for CSV
 const csvFileFilter = (req, file, cb) => {
-    if (file.mimetype === "text/csv" || file.mimetype === "application/csv" || file.originalname.endsWith('.csv')) {
+    // Mac Excel often uses application/vnd.ms-excel, application/octet-stream, or even text/plain for CSVs.
+    // The most robust check is the file extension.
+    if (
+        file.mimetype === "text/csv" || 
+        file.mimetype === "application/csv" || 
+        file.mimetype === "application/vnd.ms-excel" ||
+        file.originalname.toLowerCase().endsWith('.csv')
+    ) {
         cb(null, true);
     } else {
         cb(new AppError("Invalid file type! Please upload only CSV files.", 400), false);

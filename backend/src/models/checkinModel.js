@@ -18,7 +18,7 @@ const findAll = (filters, callback) => {
                r.registration_code,
                w.title as workshop_title,
                p.first_name, p.last_name, p.email, p.mobile,
-               u.first_name as checker_first_name, u.last_name as checker_last_name
+               u.email as checker_email
         FROM checkins c
         JOIN registrations r ON c.registration_id = r.id
         JOIN workshops w ON r.workshop_id = w.id
