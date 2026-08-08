@@ -54,10 +54,23 @@ const importParticipantsFromCSV = (filePath, workshopId = null) => {
         const results = [];
         const errors = [];
         
-        fs.createReadStream(filePath)
-            .pipe(csv())
-            .on("data", (data) => {
-                // Ensure required fields
+        try {
+            // Read into memory (max 10MB) to fix Mac line endings and Windows BOM
+            let fileContent = fs.readFileSync(filePath, 'utf-8');
+            
+            // Remove UTF-8 BOM if present (Windows Excel)
+            fileContent = fileContent.replace(/^\uFEFF/, '');
+            
+            // Normalize Mac (\r) and Windows (\r\n) line endings to Unix (\n)
+            fileContent = fileContent.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+            
+            const { Readable } = require('stream');
+            const stream = Readable.from(fileContent);
+
+            stream
+                .pipe(csv())
+                .on("data", (data) => {
+                    // Ensure required fields
                 if (data.first_name && data.last_name && data.email && data.mobile && data.organization) {
                     results.push(data);
                 } else {
@@ -97,6 +110,10 @@ const importParticipantsFromCSV = (filePath, workshopId = null) => {
                 fs.unlink(filePath, () => {});
                 reject(new AppError("Failed to parse CSV file", 500));
             });
+        } catch (err) {
+            fs.unlink(filePath, () => {});
+            reject(new AppError("Failed to read CSV file: " + err.message, 500));
+        }
     });
 };
 

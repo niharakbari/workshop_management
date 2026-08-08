@@ -4,9 +4,14 @@ const fs = require("fs");
 const path = require("path");
 
 // Helper to safely convert an ISO string or any valid date string into MySQL YYYY-MM-DD HH:mm:ss format
+// We preserve the exact string to avoid UTC conversion shifts.
 const toMySQLDatetime = (dateString) => {
     if (!dateString) return null;
-    return new Date(dateString).toISOString().slice(0, 19).replace('T', ' ');
+    let mysqlDate = dateString.replace('T', ' ').substring(0, 19);
+    if (mysqlDate.length === 16) {
+        mysqlDate += ':00';
+    }
+    return mysqlDate;
 };
 
 exports.createWorkshop = (req, res, next) => {

@@ -15,6 +15,7 @@ import RegistrationDetails from '../pages/RegistrationDetails';
 import CheckIn from '../pages/CheckIn';
 import CheckInHistory from '../pages/CheckInHistory';
 import Users from '../pages/Users';
+import Reports from '../pages/Reports';
 
 const AppRoutes = () => {
     return (
@@ -33,6 +34,7 @@ const AppRoutes = () => {
                 <Route path="check-in" element={<CheckIn />} />
                 <Route path="check-in/history" element={<CheckInHistory />} />
                 <Route path="users" element={<ProtectedRoute allowedRoles={['ADMIN']}><Users /></ProtectedRoute>} />
+                <Route path="reports" element={<ProtectedRoute allowedRoles={['ADMIN', 'STAFF']}><Reports /></ProtectedRoute>} />
             </Route>
 
             <Route path="*" element={<Navigate to="/" replace />} />

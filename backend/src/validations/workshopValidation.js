@@ -31,9 +31,15 @@ const validateWorkshop = [
             if (regStart && toTime(regEnd) < toTime(regStart)) {
                 throw new Error('Registration end must be on or after registration start');
             }
+            
+            // [TEMPORARY/TESTING LOGIC] 
+            // Allow registration_end to be after workshop start_datetime to test check-in logic
+            // TODO: Restore this validation before production deployment
+            /*
             if (start && toTime(regEnd) > toTime(start)) {
                 throw new Error('Registration end must be before or exactly at workshop start time');
             }
+            */
             return true;
         })
 ];

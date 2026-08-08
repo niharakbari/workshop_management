@@ -9,6 +9,7 @@ import toast from 'react-hot-toast';
 import Participants from './Participants';
 import Registrations from './Registrations';
 import AnnouncementsTab from '../components/workshops/AnnouncementsTab';
+import CheckinTab from '../components/workshops/CheckinTab';
 
 const WorkshopDetails = () => {
     const { id } = useParams();
@@ -70,9 +71,9 @@ const WorkshopDetails = () => {
                             </Badge>
                         </div>
                     </div>
-                    {workshop.banner_url && (
+                    {workshop.banner_image && (
                         <img 
-                            src={`http://localhost:3000${workshop.banner_url}`} 
+                            src={`http://localhost:3000${workshop.banner_image}`} 
                             alt="Banner" 
                             style={{ width: '150px', height: '100px', objectFit: 'cover', borderRadius: 'var(--radius-md)' }} 
                         />
@@ -84,6 +85,7 @@ const WorkshopDetails = () => {
                 <TabButton tab="OVERVIEW" label="Overview" />
                 <TabButton tab="PARTICIPANTS" label="Participants" />
                 <TabButton tab="REGISTRATIONS" label="Registrations" />
+                <TabButton tab="CHECKIN" label="Check-In" />
                 <TabButton tab="ANNOUNCEMENTS" label="Announcements" />
             </div>
 
@@ -96,7 +98,7 @@ const WorkshopDetails = () => {
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
                                 <div className="user-info-row">
                                     <span className="user-info-label">Workshop Date</span>
-                                    <span className="user-info-value">{new Date(workshop.date).toLocaleString()}</span>
+                                    <span className="user-info-value">{new Date(workshop.start_datetime.replace(' ', 'T')).toLocaleString()}</span>
                                 </div>
                                 <div className="user-info-row">
                                     <span className="user-info-label">Capacity</span>
@@ -104,11 +106,11 @@ const WorkshopDetails = () => {
                                 </div>
                                 <div className="user-info-row">
                                     <span className="user-info-label">Registration Starts</span>
-                                    <span className="user-info-value">{new Date(workshop.registration_start_date).toLocaleString()}</span>
+                                    <span className="user-info-value">{new Date(workshop.registration_start.replace(' ', 'T')).toLocaleString()}</span>
                                 </div>
                                 <div className="user-info-row">
                                     <span className="user-info-label">Registration Ends</span>
-                                    <span className="user-info-value">{new Date(workshop.registration_end_date).toLocaleString()}</span>
+                                    <span className="user-info-value">{new Date(workshop.registration_end.replace(' ', 'T')).toLocaleString()}</span>
                                 </div>
                             </div>
                         </div>
@@ -121,6 +123,10 @@ const WorkshopDetails = () => {
 
                 {activeTab === 'REGISTRATIONS' && (
                     <Registrations workshopId={id} />
+                )}
+
+                {activeTab === 'CHECKIN' && (
+                    <CheckinTab workshop={workshop} />
                 )}
 
                 {activeTab === 'ANNOUNCEMENTS' && (

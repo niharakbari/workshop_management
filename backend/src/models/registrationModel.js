@@ -21,6 +21,18 @@ const findById = (id, callback) => {
     db.query("SELECT * FROM registrations WHERE id = ? LIMIT 1", [id], callback);
 };
 
+const findByCode = (code, callback) => {
+    db.query(`
+        SELECT r.*, 
+               p.first_name, p.last_name, p.email, p.mobile,
+               w.start_datetime, w.end_datetime
+        FROM registrations r
+        JOIN participants p ON r.participant_id = p.id
+        JOIN workshops w ON r.workshop_id = w.id
+        WHERE r.registration_code = ? LIMIT 1
+    `, [code], callback);
+};
+
 const findAll = (filters, callback) => {
     let sql = `
         SELECT r.*, 
@@ -71,6 +83,7 @@ module.exports = {
     create,
     checkDuplicate,
     findById,
+    findByCode,
     findAll,
     updateStatus,
     deleteById

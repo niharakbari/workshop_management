@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, CalendarDays, ClipboardList, LogOut, UserCog } from 'lucide-react';
+import { LayoutDashboard, Users, CalendarDays, ClipboardList, LogOut, UserCog, FileSpreadsheet } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useDashboard } from '../../hooks/useDashboard';
 
@@ -44,6 +44,15 @@ const Sidebar = () => {
                     >
                         <UserCog size={18} />
                         <span>System Users</span>
+                    </NavLink>
+                )}
+                {(user?.role === 'ADMIN' || user?.role === 'STAFF') && (
+                    <NavLink 
+                        to="/reports" 
+                        className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+                    >
+                        <FileSpreadsheet size={18} />
+                        <span>Reports & Exports</span>
                     </NavLink>
                 )}
             </nav>

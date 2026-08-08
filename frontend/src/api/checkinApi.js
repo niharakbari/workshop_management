@@ -1,17 +1,30 @@
 import axiosInstance from './axios';
 
-export const getCheckIns = async (filters = {}) => {
-    const params = new URLSearchParams();
-    if (filters.workshop_id) params.append('workshop_id', filters.workshop_id);
-    if (filters.search) params.append('search', filters.search);
-    if (filters.limit) params.append('limit', filters.limit);
-    if (filters.offset !== undefined) params.append('offset', filters.offset);
-    
-    const response = await axiosInstance.get(`/api/checkins?${params.toString()}`);
+// --- Phase 5 Methods ---
+
+// Check in a participant
+export const checkIn = async (workshopId, registrationCode) => {
+    const response = await axiosInstance.post(`/api/checkins/workshop/${workshopId}`, {
+        registration_code: registrationCode
+    });
     return response.data;
 };
 
-export const checkInParticipant = async (registration_id) => {
-    const response = await axiosInstance.post('/api/checkins', { registration_id });
+// Get check-in history for a workshop
+export const getHistory = async (workshopId, params = {}) => {
+    const response = await axiosInstance.get(`/api/checkins/workshop/${workshopId}`, { params });
+    return response.data;
+};
+
+
+// --- Legacy Methods for CheckIn.jsx and CheckInHistory.jsx ---
+
+export const checkInParticipant = async (registrationId) => {
+    const response = await axiosInstance.post('/api/checkins', { registration_id: registrationId });
+    return response.data;
+};
+
+export const getCheckIns = async (params = {}) => {
+    const response = await axiosInstance.get('/api/checkins', { params });
     return response.data;
 };

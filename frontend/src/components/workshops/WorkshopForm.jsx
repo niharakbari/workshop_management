@@ -42,21 +42,29 @@ const WorkshopForm = ({ initialData, onSubmit, isLoading, onCancel }) => {
         if (initialData) {
             reset({
                 ...initialData,
-                start_datetime: initialData.start_datetime ? new Date(initialData.start_datetime).toISOString().slice(0, 16) : '',
-                end_datetime: initialData.end_datetime ? new Date(initialData.end_datetime).toISOString().slice(0, 16) : '',
-                registration_start: initialData.registration_start ? new Date(initialData.registration_start).toISOString().slice(0, 16) : '',
-                registration_end: initialData.registration_end ? new Date(initialData.registration_end).toISOString().slice(0, 16) : ''
+                start_datetime: initialData.start_datetime ? initialData.start_datetime.replace(' ', 'T').substring(0, 16) : '',
+                end_datetime: initialData.end_datetime ? initialData.end_datetime.replace(' ', 'T').substring(0, 16) : '',
+                registration_start: initialData.registration_start ? initialData.registration_start.replace(' ', 'T').substring(0, 16) : '',
+                registration_end: initialData.registration_end ? initialData.registration_end.replace(' ', 'T').substring(0, 16) : ''
             });
         }
     }, [initialData, reset]);
 
+    const toLocalString = (val) => {
+        if (!val) return null;
+        const d = new Date(val);
+        if (isNaN(d.getTime())) return null;
+        const pad = (n) => n.toString().padStart(2, '0');
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:00`;
+    };
+
     const submitForm = (data) => {
         onSubmit({
             ...data,
-            start_datetime: new Date(data.start_datetime).toISOString(),
-            end_datetime: new Date(data.end_datetime).toISOString(),
-            registration_start: new Date(data.registration_start).toISOString(),
-            registration_end: new Date(data.registration_end).toISOString()
+            start_datetime: toLocalString(data.start_datetime),
+            end_datetime: toLocalString(data.end_datetime),
+            registration_start: toLocalString(data.registration_start),
+            registration_end: toLocalString(data.registration_end)
         });
     };
 
