@@ -65,14 +65,43 @@ const getCheckinHistory = (workshop_id, queryParams) => {
     return new Promise((resolve, reject) => {
         const filters = { workshop_id: parseInt(workshop_id), ...queryParams };
         
-        checkinModel.findAll(filters, (err, results) => {
-            if (err) return reject(new AppError('Database error fetching checkins', 500));
-            resolve(results);
+        checkinModel.countAll(filters, (countErr, countRows) => {
+            if (countErr) return reject(new AppError('Database error counting checkins', 500));
+            
+            const total = countRows[0].total;
+            
+            checkinModel.findAll(filters, (err, results) => {
+                if (err) return reject(new AppError('Database error fetching checkins', 500));
+                resolve({ data: results, total });
+            });
+        });
+    });
+};
+
+const processCheckout = (checkin_id) => {
+    return new Promise((resolve, reject) => {
+        // 1. Find the checkin
+        checkinModel.findAll({ search: '' }, (err, results) => {
+            if (err) return reject(new AppError('Database error', 500));
+            const checkin = results.find(c => c.id === parseInt(checkin_id));
+            if (!checkin) return reject(new AppError('Check-in record not found', 404));
+
+            // 2. Prevent duplicate checkout
+            if (checkin.checked_out_at) {
+                return reject(new AppError('Participant is already checked out', 400));
+            }
+
+            // 3. Perform checkout
+            checkinModel.updateCheckout(checkin_id, (err) => {
+                if (err) return reject(new AppError('Database error during checkout', 500));
+                resolve(true);
+            });
         });
     });
 };
 
 module.exports = {
     processCheckin,
-    getCheckinHistory
+    getCheckinHistory,
+    processCheckout
 };

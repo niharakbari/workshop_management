@@ -10,10 +10,11 @@ import CSVUploadModal from '../components/participants/CSVUploadModal';
 import { Plus, Edit2, Trash2, Search, UploadCloud, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-const Participants = ({ workshopId = null }) => {
+const Participants = ({ workshopId = null, availableCapacity = null }) => {
     const navigate = useNavigate();
     const { user } = useAuth();
-    const isAdmin = user?.role === 'ADMIN';
+    const canEdit = user?.role === 'ADMIN' || user?.role === 'STAFF';
+    const isFull = workshopId && availableCapacity !== null && availableCapacity <= 0;
     const { 
         participants, 
         totalResults, 
@@ -96,7 +97,7 @@ const Participants = ({ workshopId = null }) => {
             header: 'Actions',
             render: (row) => (
                 <div style={{ display: 'flex', gap: '0.5rem' }} onClick={(e) => e.stopPropagation()}>
-                    {isAdmin && (
+                    {canEdit && (
                         <>
                             <Button size="sm" variant="secondary" onClick={() => {
                                 setSelectedParticipant(row);
@@ -125,7 +126,7 @@ const Participants = ({ workshopId = null }) => {
                         <h2 className="page-title">Participants</h2>
                         <div className="page-subtitle">Manage workshop participants.</div>
                     </div>
-                    {isAdmin && (
+                    {canEdit && (
                         <div className="page-actions">
                             <Button variant="secondary" onClick={() => setIsCsvOpen(true)}>
                                 <UploadCloud size={18} /> Import CSV
@@ -141,17 +142,25 @@ const Participants = ({ workshopId = null }) => {
                 </div>
             )}
             
-            {workshopId && isAdmin && (
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginBottom: '1rem' }}>
-                    <Button variant="secondary" onClick={() => setIsCsvOpen(true)}>
-                        <UploadCloud size={18} /> Import CSV
-                    </Button>
-                    <Button onClick={() => {
-                        setSelectedParticipant(null);
-                        setIsFormOpen(true);
-                    }}>
-                        <Plus size={18} /> Add Participant
-                    </Button>
+            {workshopId && canEdit && (
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginBottom: '1rem', alignItems: 'center' }}>
+                    {isFull ? (
+                        <div style={{ color: 'var(--danger)', fontWeight: 600, fontSize: '0.875rem', padding: '0.5rem 1rem', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '6px' }}>
+                            Workshop Full
+                        </div>
+                    ) : (
+                        <>
+                            <Button variant="secondary" onClick={() => setIsCsvOpen(true)}>
+                                <UploadCloud size={18} /> Import CSV
+                            </Button>
+                            <Button onClick={() => {
+                                setSelectedParticipant(null);
+                                setIsFormOpen(true);
+                            }}>
+                                <Plus size={18} /> Add Participant
+                            </Button>
+                        </>
+                    )}
                 </div>
             )}
 
@@ -182,7 +191,7 @@ const Participants = ({ workshopId = null }) => {
                         emptyMessage="Start by adding a participant or importing a CSV file."
                         onRowClick={(row) => navigate(`/participants/${row.id}`)}
                         emptyAction={
-                            isAdmin && (
+                            canEdit && !isFull && (
                                 <Button onClick={() => {
                                     setSelectedParticipant(null);
                                     setIsFormOpen(true);

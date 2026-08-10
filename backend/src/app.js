@@ -25,6 +25,8 @@ const participantRoutes = require("./routes/participantRoutes");
 const registrationRoutes = require("./routes/registrationRoutes");
 const announcementRoutes = require("./routes/announcementRoutes");
 const checkinRoutes = require("./routes/checkinRoutes");
+const reportRoutes = require("./routes/reportRoutes");
+const dashboardRoutes = require("./routes/dashboardRoutes");
     
 app.use("/auth", authRoutes);
 app.use("/api/users", userRoutes);
@@ -33,6 +35,8 @@ app.use("/api/participants", participantRoutes);
 app.use("/api/registrations", registrationRoutes);
 app.use("/api/announcements", announcementRoutes);
 app.use("/api/checkins", checkinRoutes);
+app.use("/api/reports", reportRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 // Serve static files for banner images
 const path = require("path");

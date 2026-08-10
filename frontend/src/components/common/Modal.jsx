@@ -1,12 +1,12 @@
 import React from 'react';
 import { X } from 'lucide-react';
 
-const Modal = ({ isOpen, onClose, title, children, footer }) => {
+const Modal = ({ isOpen, onClose, title, children, footer, contentStyle = {} }) => {
     if (!isOpen) return null;
 
     return (
         <div className="modal-overlay" onClick={onClose}>
-            <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <div className="modal-content" style={contentStyle} onClick={e => e.stopPropagation()}>
                 <div className="modal-header">
                     <h3>{title}</h3>
                     <button className="close-btn" onClick={onClose}>

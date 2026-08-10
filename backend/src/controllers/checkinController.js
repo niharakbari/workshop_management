@@ -26,11 +26,25 @@ exports.getCheckIns = asyncHandler(async (req, res, next) => {
     const { workshop_id } = req.params;
     
     // Add pagination or search params if passed in query
-    const results = await checkinService.getCheckinHistory(workshop_id, req.query);
+    const { data, total } = await checkinService.getCheckinHistory(workshop_id, req.query);
     
     res.status(200).json({
         status: 'success',
-        results: results.length,
-        data: results
+        results: data.length,
+        total,
+        limit: req.query.limit ? parseInt(req.query.limit) : null,
+        offset: req.query.offset ? parseInt(req.query.offset) : null,
+        data
+    });
+});
+
+exports.checkOut = asyncHandler(async (req, res, next) => {
+    const { id } = req.params;
+    
+    await checkinService.processCheckout(id);
+    
+    res.status(200).json({
+        status: 'success',
+        message: 'Participant checked out successfully'
     });
 });

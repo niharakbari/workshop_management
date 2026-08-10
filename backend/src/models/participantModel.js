@@ -1,11 +1,15 @@
 const db = require("../config/database");
 
-const create = (participant, callback) => {
+const create = (participant, connection = db, callback) => {
+    if (typeof connection === 'function') {
+        callback = connection;
+        connection = db;
+    }
     const sql = `
         INSERT INTO participants (first_name, last_name, email, mobile, organization) 
         VALUES (?, ?, ?, ?, ?)
     `;
-    db.query(sql, [
+    connection.query(sql, [
         participant.first_name, 
         participant.last_name || null, 
         participant.email, 
@@ -18,8 +22,12 @@ const findById = (id, callback) => {
     db.query("SELECT * FROM participants WHERE id = ? LIMIT 1", [id], callback);
 };
 
-const findByEmailOrMobile = (email, mobile, callback) => {
-    db.query(
+const findByEmailOrMobile = (email, mobile, connection = db, callback) => {
+    if (typeof connection === 'function') {
+        callback = connection;
+        connection = db;
+    }
+    connection.query(
         "SELECT * FROM participants WHERE email = ? OR mobile = ? LIMIT 1", 
         [email, mobile], 
         callback

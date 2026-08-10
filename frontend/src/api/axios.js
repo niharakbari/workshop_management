@@ -33,7 +33,8 @@ axiosInstance.interceptors.response.use(
         if (
             error.response?.status === 401 && 
             !originalRequest._retry &&
-            originalRequest.url !== "/auth/refresh"
+            !originalRequest.url?.includes("/auth/refresh") &&
+            !originalRequest.url?.includes("/auth/login")
         ) {
             originalRequest._retry = true; // Mark as retried to avoid infinite loops
             
@@ -50,7 +51,10 @@ axiosInstance.interceptors.response.use(
                 // Save the new access token
                 if (newAccessToken) {
                     localStorage.setItem("accessToken", newAccessToken);
-                    // Update the authorization header for the original request
+                   
+        }
+
+        return Promise.reject(error); // Update the authorization header for the original request
                     originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
                     
                     // Retry the original request
@@ -62,9 +66,6 @@ axiosInstance.interceptors.response.use(
                 console.error('Silent refresh failed', refreshError);
                 return Promise.reject(refreshError);
             }
-        }
-
-        return Promise.reject(error);
     }
 );
 

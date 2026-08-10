@@ -54,6 +54,7 @@ const findById = (id, callback) => {
             email,
             password,
             role,
+            refresh_token_id,
             created_at,
             updated_at
         FROM users
@@ -114,13 +115,15 @@ const countAdmins = (callback) => {
 };
 
 const deleteById = (id, callback) => {
+    db.query("DELETE FROM users WHERE id = ?", [id], callback);
+};
 
-    db.query(
-        "DELETE FROM users WHERE id = ?",
-        [id],
-        callback
-    );
+const updateRefreshTokenId = (userId, tokenId, callback) => {
+    db.query("UPDATE users SET refresh_token_id = ? WHERE id = ?", [tokenId, userId], callback);
+};
 
+const findByRefreshTokenId = (tokenId, callback) => {
+    db.query("SELECT * FROM users WHERE refresh_token_id = ? LIMIT 1", [tokenId], callback);
 };
 
 module.exports = {
@@ -130,5 +133,7 @@ module.exports = {
     findById,
     findAll,
     countAdmins,
-    deleteById
+    deleteById,
+    updateRefreshTokenId,
+    findByRefreshTokenId
 };

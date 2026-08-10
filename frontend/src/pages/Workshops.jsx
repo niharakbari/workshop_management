@@ -7,33 +7,51 @@ import Badge from '../components/common/Badge';
 import Modal from '../components/common/Modal';
 import Spinner from '../components/common/Spinner';
 import WorkshopForm from '../components/workshops/WorkshopForm';
-import { Plus, Edit2, Trash2, Search, Filter, Image as ImageIcon } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Plus, Edit2, Trash2, Search, Filter, Image as ImageIcon, CalendarClock } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const Workshops = () => {
     const { user } = useAuth();
     const isAdmin = user?.role === 'ADMIN';
     const navigate = useNavigate();
+    const location = useLocation();
+    
+    // Parse initial phase from URL query parameters
+    const queryParams = new URLSearchParams(location.search);
+    const initialPhase = queryParams.get('phase') || '';
+    
     const { workshops, isLoading, fetchWorkshops, createWorkshop, updateWorkshop, deleteWorkshop, updateStatus, uploadBanner } = useWorkshops();
     
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
+    const [phaseFilter, setPhaseFilter] = useState(initialPhase);
     
     // Modal states
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
     const [isBannerOpen, setIsBannerOpen] = useState(false);
+    const [isStatusConfirmOpen, setIsStatusConfirmOpen] = useState(false);
     
     const [selectedWorkshop, setSelectedWorkshop] = useState(null);
+    const [statusAction, setStatusAction] = useState(null);
     const [bannerFile, setBannerFile] = useState(null);
     const [bannerPreview, setBannerPreview] = useState(null);
 
     useEffect(() => {
         const debounce = setTimeout(() => {
-            fetchWorkshops(search, statusFilter);
+            fetchWorkshops(search, statusFilter, phaseFilter);
+            
+            // Sync phase filter to URL if changed
+            const params = new URLSearchParams(location.search);
+            if (phaseFilter) {
+                params.set('phase', phaseFilter);
+            } else {
+                params.delete('phase');
+            }
+            navigate({ search: params.toString() }, { replace: true });
         }, 500);
         return () => clearTimeout(debounce);
-    }, [search, statusFilter, fetchWorkshops]);
+    }, [search, statusFilter, phaseFilter, fetchWorkshops, navigate, location.search]);
 
     const handleCreateOrEdit = async (data) => {
         let success;
@@ -78,6 +96,24 @@ const Workshops = () => {
         }
     };
 
+    const handleStatusClick = (workshop, newStatus) => {
+        if (newStatus === 'CLOSED' || newStatus === 'CANCELLED') {
+            setStatusAction({ workshop, newStatus });
+            setIsStatusConfirmOpen(true);
+        } else {
+            updateStatus(workshop.id, newStatus);
+        }
+    };
+
+    const confirmStatusChange = async () => {
+        if (!statusAction) return;
+        const success = await updateStatus(statusAction.workshop.id, statusAction.newStatus);
+        if (success) {
+            setIsStatusConfirmOpen(false);
+            setStatusAction(null);
+        }
+    };
+
     const getStatusBadge = (status) => {
         switch (status) {
             case 'DRAFT': return <Badge type="DRAFT">Draft</Badge>;
@@ -87,9 +123,15 @@ const Workshops = () => {
         }
     };
 
+    const formatDateTime = (dateString) => {
+        if (!dateString) return 'TBD';
+        const d = new Date(dateString.replace(' ', 'T'));
+        return d.toLocaleString([], { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    };
+
     const columns = [
         { 
-            header: 'Workshop', 
+            header: 'Workshop & Registration', 
             accessor: 'title',
             render: (row) => (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -106,12 +148,20 @@ const Workshops = () => {
                     )}
                     <div>
                         <div style={{ fontWeight: 600 }}>{row.title}</div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                            {row.start_datetime ? new Date(row.start_datetime.replace(' ', 'T')).toLocaleDateString() : 'No date set'}
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                            <strong>Registration:</strong> {formatDateTime(row.registration_start)} - {formatDateTime(row.registration_end)}
                         </div>
                     </div>
                 </div>
             )
+        },
+        {
+            header: 'Event Start',
+            render: (row) => formatDateTime(row.start_datetime)
+        },
+        {
+            header: 'Event End',
+            render: (row) => formatDateTime(row.end_datetime)
         },
         { 
             header: 'Status', 
@@ -136,19 +186,19 @@ const Workshops = () => {
                             </Button>
                             
                             {row.status === 'DRAFT' && (
-                                <Button size="sm" variant="secondary" onClick={() => updateStatus(row.id, 'OPEN')} title="Publish">
+                                <Button size="sm" variant="secondary" onClick={() => handleStatusClick(row, 'OPEN')} title="Publish">
                                     Publish
                                 </Button>
                             )}
-                            {row.status === 'OPEN' && (
-                                <Button size="sm" variant="secondary" onClick={() => updateStatus(row.id, 'CLOSED')} title="Close Registration">
-                                    Close Registration
-                                </Button>
-                            )}
-                            {row.status === 'CLOSED' && (
-                                <Button size="sm" variant="secondary" onClick={() => updateStatus(row.id, 'OPEN')} title="Reopen">
-                                    Reopen
-                                </Button>
+                            {(row.status === 'OPEN' || row.status === 'PUBLISHED') && (
+                                <>
+                                    <Button size="sm" variant="secondary" onClick={() => handleStatusClick(row, 'CLOSED')} title="Close Registration">
+                                        Close Registration
+                                    </Button>
+                                    <Button size="sm" variant="danger" onClick={() => handleStatusClick(row, 'CANCELLED')} title="Cancel Workshop">
+                                        Cancel
+                                    </Button>
+                                </>
                             )}
 
                             <Button size="sm" variant="secondary" onClick={() => {
@@ -214,6 +264,24 @@ const Workshops = () => {
                         <option value="CLOSED">Closed</option>
                     </select>
                 </div>
+
+                <div className="input-wrapper">
+                    <CalendarClock size={18} style={{ position: 'absolute', left: '10px', color: 'var(--text-light)' }} />
+                    <select 
+                        className="form-input" 
+                        style={{ paddingLeft: '2.5rem' }}
+                        value={phaseFilter}
+                        onChange={(e) => setPhaseFilter(e.target.value)}
+                    >
+                        <option value="">All Operational Phases</option>
+                        <option value="ongoing">Ongoing</option>
+                        <option value="upcoming">Upcoming</option>
+                        <option value="cancelled">Cancelled</option>
+                        <option value="open_for_registration">Open for Registration</option>
+                        <option value="registration_phase">Registration Phase</option>
+                        <option value="completed">Completed</option>
+                    </select>
+                </div>
             </div>
 
             {isLoading && !workshops.length ? (
@@ -264,6 +332,39 @@ const Workshops = () => {
                 }
             >
                 <p>Are you sure you want to delete <strong>{selectedWorkshop?.title}</strong>? This action cannot be undone.</p>
+            </Modal>
+
+            {/* Status Change Confirmation Modal */}
+            <Modal
+                isOpen={isStatusConfirmOpen}
+                onClose={() => setIsStatusConfirmOpen(false)}
+                title={statusAction?.newStatus === 'CLOSED' ? "Confirm Close Registration" : "Confirm Cancellation"}
+                footer={
+                    <>
+                        <Button variant="secondary" onClick={() => setIsStatusConfirmOpen(false)}>Back</Button>
+                        <Button 
+                            variant={statusAction?.newStatus === 'CANCELLED' ? "danger" : "primary"} 
+                            onClick={confirmStatusChange} 
+                            isLoading={isLoading}
+                        >
+                            {statusAction?.newStatus === 'CLOSED' ? "Close Registration" : "Cancel Workshop"}
+                        </Button>
+                    </>
+                }
+            >
+                <p>
+                    Are you sure you want to change the status of <strong>{statusAction?.workshop?.title}</strong> to <strong>{statusAction?.newStatus}</strong>?
+                </p>
+                {statusAction?.newStatus === 'CLOSED' && (
+                    <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+                        No more participants will be able to register, but existing ones will be kept.
+                    </p>
+                )}
+                {statusAction?.newStatus === 'CANCELLED' && (
+                    <p style={{ fontSize: '0.875rem', color: 'var(--danger)' }}>
+                        This will mark the entire event as cancelled.
+                    </p>
+                )}
             </Modal>
 
             {/* Banner Upload Modal */}

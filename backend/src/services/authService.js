@@ -65,10 +65,20 @@ const loginUser = async (email, password) => {
             const refreshToken = jwt.generateRefreshToken(user);
             const expiresAt = new Date(Date.now() + config.jwt.refreshTokenExpiryMs);
 
-            refreshTokenModel.saveRefreshToken(user.id, refreshToken, expiresAt, (saveErr) => {
-                if (saveErr) return reject(saveErr);
-                resolve({ accessToken, refreshToken, user });
-            });
+            if (user.refresh_token_id) {
+                refreshTokenModel.updateRefreshToken(user.refresh_token_id, refreshToken, expiresAt, (updateErr) => {
+                    if (updateErr) return reject(updateErr);
+                    resolve({ accessToken, refreshToken, user });
+                });
+            } else {
+                refreshTokenModel.saveRefreshToken(refreshToken, expiresAt, (saveErr, result) => {
+                    if (saveErr) return reject(saveErr);
+                    userModel.updateRefreshTokenId(user.id, result.insertId, (updateUserErr) => {
+                        if (updateUserErr) return reject(updateUserErr);
+                        resolve({ accessToken, refreshToken, user });
+                    });
+                });
+            }
         });
     });
 };
@@ -95,11 +105,11 @@ const refreshToken = async (token) => {
             const dbToken = rows[0];
             const now = new Date();
             if (new Date(dbToken.expires_at) < now) {
-                refreshTokenModel.deleteRefreshToken(token, () => {});
+                refreshTokenModel.deleteRefreshToken(dbToken.id, () => {});
                 return reject(new AppError("Refresh token expired", 401));
             }
 
-            userModel.findById(decoded.id, (err, userRows) => {
+            userModel.findByRefreshTokenId(dbToken.id, (err, userRows) => {
                 if (err) return reject(err);
                 if (userRows.length === 0) {
                     return reject(new AppError("User not found", 404));
@@ -110,16 +120,12 @@ const refreshToken = async (token) => {
                 const newRefreshToken = jwt.generateRefreshToken(user);
                 const expiresAt = new Date(Date.now() + config.jwt.refreshTokenExpiryMs);
 
-                refreshTokenModel.deleteRefreshToken(token, (deleteErr) => {
-                    if (deleteErr) return reject(deleteErr);
-
-                    refreshTokenModel.saveRefreshToken(user.id, newRefreshToken, expiresAt, (saveErr) => {
-                        if (saveErr) return reject(saveErr);
-                        resolve({
-                            accessToken: newAccessToken,
-                            refreshToken: newRefreshToken,
-                            user
-                        });
+                refreshTokenModel.updateRefreshToken(dbToken.id, newRefreshToken, expiresAt, (updateErr) => {
+                    if (updateErr) return reject(updateErr);
+                    resolve({
+                        accessToken: newAccessToken,
+                        refreshToken: newRefreshToken,
+                        user
                     });
                 });
             });
@@ -132,9 +138,28 @@ const logoutUser = async (token) => {
         if (!token) {
             return resolve();
         }
-        refreshTokenModel.deleteRefreshToken(token, (err) => {
+        refreshTokenModel.findRefreshToken(token, (err, rows) => {
             if (err) return reject(err);
-            resolve();
+            if (rows.length === 0) return resolve();
+            
+            const dbToken = rows[0];
+            
+            userModel.findByRefreshTokenId(dbToken.id, (userErr, userRows) => {
+                if (userErr) return reject(userErr);
+                if (userRows.length > 0) {
+                    userModel.updateRefreshTokenId(userRows[0].id, null, () => {
+                        refreshTokenModel.deleteRefreshToken(dbToken.id, (delErr) => {
+                            if (delErr) return reject(delErr);
+                            resolve();
+                        });
+                    });
+                } else {
+                    refreshTokenModel.deleteRefreshToken(dbToken.id, (delErr) => {
+                        if (delErr) return reject(delErr);
+                        resolve();
+                    });
+                }
+            });
         });
     });
 };

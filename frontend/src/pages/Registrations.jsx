@@ -14,7 +14,7 @@ import { useNavigate } from 'react-router-dom';
 const Registrations = ({ workshopId = null }) => {
     const navigate = useNavigate();
     const { user } = useAuth();
-    const isAdmin = user?.role === 'ADMIN';
+    const canEdit = user?.role === 'ADMIN' || user?.role === 'STAFF';
     const { registrations, isLoading, fetchRegistrations, createRegistration, cancelRegistration, deleteRegistration, updateStatus } = useRegistrations();
     const { workshops, fetchWorkshops } = useWorkshops();
     
@@ -85,7 +85,7 @@ const Registrations = ({ workshopId = null }) => {
             header: 'Actions',
             render: (row) => (
                 <div style={{ display: 'flex', gap: '0.5rem' }} onClick={(e) => e.stopPropagation()}>
-                    {isAdmin && (
+                    {canEdit && (
                         <>
                             {row.status !== 'CANCELLED' && (
                                 <Button size="sm" variant="secondary" onClick={() => cancelRegistration(row.id)} title="Cancel Registration">

@@ -1,13 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const checkinController = require('../controllers/checkinController');
-const authMiddleware = require('../middlewares/authMiddleware');
+const { protect, restrictTo } = require('../middlewares/authMiddleware');
 const { body } = require('express-validator');
 
 // Protect all check-in routes
-router.use(authMiddleware.protect);
+router.use(protect);
 // Only ADMIN and STAFF can manage check-ins
-router.use(authMiddleware.restrictTo('ADMIN', 'STAFF'));
+router.use(restrictTo('ADMIN', 'STAFF'));
 
 // Check in a participant
 router.post(
@@ -20,5 +20,9 @@ router.post(
 
 // Get check-in history for a workshop
 router.get('/workshop/:workshop_id', checkinController.getCheckIns);
+
+// Check-out (Admin, Staff)
+router.use(restrictTo('ADMIN', 'STAFF'));
+router.patch('/:id/checkout', checkinController.checkOut);
 
 module.exports = router;

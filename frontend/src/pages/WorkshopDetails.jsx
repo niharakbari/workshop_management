@@ -61,29 +61,82 @@ const WorkshopDetails = () => {
                 <ArrowLeft size={16} /> Back to Workshops
             </Button>
 
-            <div className="user-card" style={{ marginBottom: '1.5rem', padding: '1.5rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div>
-                        <h2 style={{ fontSize: '1.75rem', marginBottom: '0.5rem' }}>{workshop.title}</h2>
-                        <div style={{ marginTop: '0.5rem' }}>
-                            <Badge type={workshop.status === 'OPEN' || workshop.status === 'PUBLISHED' ? 'success' : workshop.status === 'CLOSED' ? 'danger' : 'neutral'}>
-                                {workshop.status}
-                            </Badge>
-                        </div>
+            <div 
+                className="user-card" 
+                style={{ 
+                    marginBottom: '1.5rem', 
+                    position: 'relative', 
+                    height: '260px', 
+                    overflow: 'hidden',
+                    display: 'flex',
+                    alignItems: 'flex-end',
+                    padding: '2rem'
+                }}
+            >
+                {/* Background Banner */}
+                {workshop.banner_image ? (
+                    <img 
+                        src={`http://localhost:3000${workshop.banner_image}`} 
+                        alt="Workshop Banner" 
+                        style={{ 
+                            position: 'absolute', 
+                            top: 0, 
+                            left: 0, 
+                            width: '100%', 
+                            height: '100%', 
+                            objectFit: 'cover',
+                            zIndex: 0
+                        }} 
+                    />
+                ) : (
+                    <div 
+                        style={{ 
+                            position: 'absolute', 
+                            top: 0, 
+                            left: 0, 
+                            width: '100%', 
+                            height: '100%', 
+                            background: 'linear-gradient(135deg, var(--primary) 0%, #1e1e2f 100%)',
+                            zIndex: 0
+                        }} 
+                    />
+                )}
+                
+                {/* Gradient Overlay for Text Readability */}
+                <div 
+                    style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '50%',
+                        marginTop: 'auto',
+                        bottom: 0,
+                        background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0) 100%)',
+                        zIndex: 1
+                    }}
+                />
+
+                {/* Content */}
+                <div style={{ position: 'relative', zIndex: 2, color: 'white', width: '100%' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.75rem' }}>
+                        <h2 style={{ fontSize: '2.25rem', margin: 0, textShadow: '0 2px 10px rgba(0,0,0,0.8), 0 0 20px rgba(0,0,0,0.6)', letterSpacing: '-0.5px', fontWeight: 700, color: '#fff' }}>
+                            {workshop.title}
+                        </h2>
                     </div>
-                    {workshop.banner_image && (
-                        <img 
-                            src={`http://localhost:3000${workshop.banner_image}`} 
-                            alt="Banner" 
-                            style={{ width: '150px', height: '100px', objectFit: 'cover', borderRadius: 'var(--radius-md)' }} 
-                        />
-                    )}
+                    <div>
+                        <Badge type={workshop.status === 'OPEN' || workshop.status === 'PUBLISHED' ? 'success' : workshop.status === 'CLOSED' ? 'danger' : 'neutral'}>
+                            {workshop.status}
+                        </Badge>
+                    </div>
                 </div>
             </div>
 
             <div style={{ display: 'flex', borderBottom: '1px solid var(--surface-border)', marginBottom: '1.5rem' }}>
                 <TabButton tab="OVERVIEW" label="Overview" />
-                <TabButton tab="PARTICIPANTS" label="Participants" />
+                {workshop.status === 'OPEN' && (
+                    <TabButton tab="PARTICIPANTS" label="Participants" />
+                )}
                 <TabButton tab="REGISTRATIONS" label="Registrations" />
                 <TabButton tab="CHECKIN" label="Check-In" />
                 <TabButton tab="ANNOUNCEMENTS" label="Announcements" />
@@ -91,34 +144,66 @@ const WorkshopDetails = () => {
 
             <div style={{ paddingBottom: '2rem' }}>
                 {activeTab === 'OVERVIEW' && (
-                    <div className="user-card">
-                        <div className="user-info">
-                            <p>{workshop.description}</p>
-                            
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
+                    <div style={{ display: 'grid', gap: '1.5rem', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}>
+                        <div className="user-card" style={{ padding: '1.5rem' }}>
+                            <h3 style={{ marginBottom: '1rem' }}>Statistics</h3>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                                 <div className="user-info-row">
-                                    <span className="user-info-label">Workshop Date</span>
-                                    <span className="user-info-value">{new Date(workshop.start_datetime.replace(' ', 'T')).toLocaleString()}</span>
+                                    <span className="user-info-label">Total Registrations</span>
+                                    <span className="user-info-value">{workshop.stats?.total_registrations || 0}</span>
                                 </div>
                                 <div className="user-info-row">
-                                    <span className="user-info-label">Capacity</span>
-                                    <span className="user-info-value">{workshop.capacity}</span>
+                                    <span className="user-info-label">Total Check-ins</span>
+                                    <span className="user-info-value">{workshop.stats?.total_checkins || 0}</span>
                                 </div>
                                 <div className="user-info-row">
-                                    <span className="user-info-label">Registration Starts</span>
-                                    <span className="user-info-value">{new Date(workshop.registration_start.replace(' ', 'T')).toLocaleString()}</span>
+                                    <span className="user-info-label" style={{ color: 'var(--success)' }}>Present at Venue</span>
+                                    <span className="user-info-value" style={{ fontWeight: 'bold' }}>{workshop.stats?.present || 0}</span>
                                 </div>
                                 <div className="user-info-row">
-                                    <span className="user-info-label">Registration Ends</span>
-                                    <span className="user-info-value">{new Date(workshop.registration_end.replace(' ', 'T')).toLocaleString()}</span>
+                                    <span className="user-info-label">Checked Out</span>
+                                    <span className="user-info-value">{workshop.stats?.checked_out || 0}</span>
+                                </div>
+                                <div className="user-info-row" style={{ gridColumn: 'span 2' }}>
+                                    <span className="user-info-label">Available Capacity</span>
+                                    <span className="user-info-value">{workshop.stats?.available_capacity ?? workshop.capacity} / {workshop.capacity}</span>
                                 </div>
                             </div>
                         </div>
+
+                        <div className="user-card" style={{ padding: '1.5rem' }}>
+                            <h3 style={{ marginBottom: '1rem' }}>Schedule</h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                <div>
+                                    <div className="user-info-label">Event Start</div>
+                                    <div className="user-info-value">{workshop.start_datetime ? new Date(workshop.start_datetime.replace(' ', 'T')).toLocaleString() : 'TBD'}</div>
+                                </div>
+                                <div>
+                                    <div className="user-info-label">Event End</div>
+                                    <div className="user-info-value">{workshop.end_datetime ? new Date(workshop.end_datetime.replace(' ', 'T')).toLocaleString() : 'TBD'}</div>
+                                </div>
+                                <div>
+                                    <div className="user-info-label">Registration Start</div>
+                                    <div className="user-info-value">{workshop.registration_start ? new Date(workshop.registration_start.replace(' ', 'T')).toLocaleString() : 'TBD'}</div>
+                                </div>
+                                <div>
+                                    <div className="user-info-label">Registration End</div>
+                                    <div className="user-info-value">{workshop.registration_end ? new Date(workshop.registration_end.replace(' ', 'T')).toLocaleString() : 'TBD'}</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {workshop.description && (
+                            <div className="user-card" style={{ padding: '1.5rem', gridColumn: '1 / -1' }}>
+                                <h3 style={{ marginBottom: '1rem' }}>Description</h3>
+                                <p style={{ color: 'var(--text-light)', lineHeight: '1.6' }}>{workshop.description}</p>
+                            </div>
+                        )}
                     </div>
                 )}
 
-                {activeTab === 'PARTICIPANTS' && (
-                    <Participants workshopId={id} />
+                {activeTab === 'PARTICIPANTS' && workshop.status === 'OPEN' && (
+                    <Participants workshopId={id} availableCapacity={workshop.stats?.available_capacity ?? workshop.capacity} />
                 )}
 
                 {activeTab === 'REGISTRATIONS' && (

@@ -7,10 +7,10 @@ const generateRegistrationCode = () => {
     return `REG-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
 };
 
-const registerParticipant = (registrationData) => {
+const registerParticipant = (registrationData, connection = null) => {
     return new Promise((resolve, reject) => {
         // Business logic: check for duplicate registration
-        registrationModel.checkDuplicate(registrationData.participant_id, registrationData.workshop_id, (err, rows) => {
+        registrationModel.checkDuplicate(registrationData.participant_id, registrationData.workshop_id, connection, (err, rows) => {
             if (err) return reject(err);
             if (rows.length > 0) {
                 return reject(new AppError("This participant is already registered for this workshop.", 400));
@@ -21,8 +21,11 @@ const registerParticipant = (registrationData) => {
                 registration_code: generateRegistrationCode()
             };
 
-            registrationModel.create(newRegistration, (createErr, result) => {
+            registrationModel.create(newRegistration, connection, (createErr, result) => {
                 if (createErr) return reject(createErr);
+                if (result.affectedRows === 0) {
+                    return reject(new AppError("Workshop capacity reached. Cannot register.", 400));
+                }
                 resolve({ id: result.insertId, ...newRegistration, status: 'REGISTERED' });
             });
         });

@@ -15,3 +15,8 @@ export const updateUserRole = async (userId, role) => {
     const response = await axiosInstance.patch(`/api/users/${userId}/role`, { role });
     return response.data;
 };
+
+export const deleteUser = async (userId) => {
+    const response = await axiosInstance.delete(`/api/users/${userId}`);
+    return response.data;
+};

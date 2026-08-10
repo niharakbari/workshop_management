@@ -1,20 +1,31 @@
 const db = require("../config/database");
 
-const create = (registration, callback) => {
+const create = (registration, connection = db, callback) => {
+    if (typeof connection === 'function') {
+        callback = connection;
+        connection = db;
+    }
     const sql = `
         INSERT INTO registrations (participant_id, workshop_id, registration_code, status) 
-        VALUES (?, ?, ?, 'REGISTERED')
+        SELECT ?, ?, ?, 'REGISTERED' FROM DUAL
+        WHERE (SELECT COUNT(*) FROM registrations WHERE workshop_id = ? AND status != 'CANCELLED') < (SELECT capacity FROM workshops WHERE id = ?)
     `;
-    db.query(sql, [
+    connection.query(sql, [
         registration.participant_id, 
         registration.workshop_id, 
-        registration.registration_code
+        registration.registration_code,
+        registration.workshop_id,
+        registration.workshop_id
     ], callback);
 };
 
-const checkDuplicate = (participant_id, workshop_id, callback) => {
+const checkDuplicate = (participant_id, workshop_id, connection = db, callback) => {
+    if (typeof connection === 'function') {
+        callback = connection;
+        connection = db;
+    }
     const sql = "SELECT id FROM registrations WHERE participant_id = ? AND workshop_id = ? LIMIT 1";
-    db.query(sql, [participant_id, workshop_id], callback);
+    connection.query(sql, [participant_id, workshop_id], callback);
 };
 
 const findById = (id, callback) => {

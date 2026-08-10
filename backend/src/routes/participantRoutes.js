@@ -13,8 +13,8 @@ router.use(protect);
 router.get("/", participantController.getAllParticipants);
 router.get("/:id", participantController.getParticipantById);
 
-// Write operations restricted to ADMIN
-router.use(restrictTo("ADMIN"));
+// Write operations restricted to ADMIN and STAFF
+router.use(restrictTo("ADMIN", "STAFF"));
 
 router.post(
     "/",

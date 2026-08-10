@@ -16,6 +16,12 @@ export const getHistory = async (workshopId, params = {}) => {
     return response.data;
 };
 
+// Check out a participant
+export const checkOut = async (checkinId) => {
+    const response = await axiosInstance.patch(`/api/checkins/${checkinId}/checkout`);
+    return response.data;
+};
+
 
 // --- Legacy Methods for CheckIn.jsx and CheckInHistory.jsx ---
 

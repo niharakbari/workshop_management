@@ -39,11 +39,27 @@ export const useUsers = () => {
         }
     };
 
+    const removeUser = async (userId) => {
+        setIsLoading(true);
+        try {
+            const data = await userApi.deleteUser(userId);
+            toast.success(data.message);
+            setUsers(prev => prev.filter(u => u.id !== userId));
+            return true;
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Failed to delete user');
+            return false;
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     return {
         users,
         isLoading,
         error,
         fetchUsers,
-        updateRole
+        updateRole,
+        removeUser
     };
 };

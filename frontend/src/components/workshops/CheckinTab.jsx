@@ -10,16 +10,20 @@ import EmptyState from '../common/EmptyState';
 import toast from 'react-hot-toast';
 import { CheckCircle, ClipboardCheck, Search } from 'lucide-react';
 
+import { useNavigate } from 'react-router-dom';
+
 const CheckinTab = ({ workshop }) => {
+    const navigate = useNavigate();
     const workshopId = workshop?.id;
     const { user } = useAuth();
     const isAdmin = user?.role === 'ADMIN';
     const isStaff = user?.role === 'STAFF';
 
-    const { checkins, totalCheckedIn, isLoading, fetchCheckins, checkInParticipant } = useCheckins();
+    const { checkins, totalCheckedIn, isLoading, fetchCheckins, checkInParticipant, checkOutParticipant } = useCheckins();
     const [registrationCode, setRegistrationCode] = useState('');
     const [isSearching, setIsSearching] = useState(false);
     const [searchedParticipant, setSearchedParticipant] = useState(null);
+    const [historySearchTerm, setHistorySearchTerm] = useState('');
     const [isCheckingIn, setIsCheckingIn] = useState(false);
     const [lastCheckedIn, setLastCheckedIn] = useState(null);
     const [now, setNow] = useState(new Date());
@@ -33,9 +37,9 @@ const CheckinTab = ({ workshop }) => {
 
     useEffect(() => {
         if (workshopId) {
-            fetchCheckins(workshopId);
+            fetchCheckins(workshopId, historySearchTerm);
         }
-    }, [workshopId, fetchCheckins]);
+    }, [workshopId, fetchCheckins, historySearchTerm]);
 
     const handleSearch = async (e) => {
         e.preventDefault();
@@ -76,6 +80,7 @@ const CheckinTab = ({ workshop }) => {
             setSearchedParticipant(null);
         } catch (err) {
             console.error('Check-in failed:', err);
+            toast.error(err?.response?.data?.message || err.message || 'Check-in failed');
         } finally {
             setIsCheckingIn(false);
         }
@@ -114,7 +119,7 @@ const CheckinTab = ({ workshop }) => {
         { header: 'Registration Code', accessor: 'registration_code' },
         { 
             header: 'Participant', 
-            accessor: (row) => (
+            render: (row) => (
                 <div>
                     <div style={{ fontWeight: 500 }}>{row.first_name} {row.last_name}</div>
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{row.email}</div>
@@ -123,10 +128,62 @@ const CheckinTab = ({ workshop }) => {
         },
         { 
             header: 'Checked In At', 
-            accessor: (row) => new Date(row.checked_in_at).toLocaleString() 
+            render: (row) => new Date(row.checked_in_at).toLocaleString() 
         },
-        { header: 'Checked In By', accessor: 'checked_in_by_name' }
+        { 
+            header: 'Checked In By', 
+            render: (row) => row.checker_email || '—' 
+        },
+        {
+            header: 'Checked Out',
+            render: (row) => {
+                if (row.checked_out_at) {
+                    const checkInTime = new Date(row.checked_in_at);
+                    const checkOutTime = new Date(row.checked_out_at);
+                    
+                    const formatDuration = (start, end) => {
+                        const diffMs = end - start;
+                        const totalMinutes = Math.floor(diffMs / (1000 * 60));
+                        const h = Math.floor(totalMinutes / 60);
+                        const m = totalMinutes % 60;
+                        if (h === 0) return `${m} minute${m !== 1 ? 's' : ''}`;
+                        if (m === 0) return `${h} hour${h !== 1 ? 's' : ''}`;
+                        return `${h} hour${h !== 1 ? 's' : ''} ${m} minute${m !== 1 ? 's' : ''}`;
+                    };
+
+                    const durationStr = formatDuration(checkInTime, checkOutTime);
+                    
+                    return (
+                        <div>
+                            <div>{checkOutTime.toLocaleString()}</div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--success)' }}>{durationStr}</div>
+                        </div>
+                    );
+                }
+                return (
+                    <Button 
+                        size="sm" 
+                        variant="secondary" 
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleCheckOut(row.id);
+                        }}
+                    >
+                        Check Out
+                    </Button>
+                );
+            }
+        }
     ];
+
+    const handleCheckOut = async (checkinId) => {
+        try {
+            await checkOutParticipant(workshopId, checkinId);
+            toast.success('Check-out successful!');
+        } catch (err) {
+            toast.error(err?.response?.data?.message || 'Check-out failed');
+        }
+    };
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
@@ -147,7 +204,7 @@ const CheckinTab = ({ workshop }) => {
                 </div>
 
                 <form onSubmit={handleSearch} style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end' }}>
-                    <div style={{ flex: 1, maxWidth: '400px' }}>
+                    <div style={{ flex: 1, maxWidth: '100%' }}>
                         <Input 
                             label="Registration Code"
                             placeholder="Enter code (e.g. REG-12345)"
@@ -221,15 +278,31 @@ const CheckinTab = ({ workshop }) => {
             </div>
 
             <div className="user-card" style={{ padding: '1.5rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                    <h3 style={{ margin: 0 }}>Recent Check-ins</h3>
-                    <div style={{ fontWeight: 600, color: 'var(--primary-color)' }}>
-                        Total Checked In: {totalCheckedIn}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <h3 style={{ margin: 0 }}>Recent Check-ins</h3>
+                        <div style={{ fontWeight: 600, color: 'var(--primary-color)' }}>
+                            Total Checked In: {totalCheckedIn}
+                        </div>
+                    </div>
+                    
+                    <div style={{ display: 'flex', gap: '0.5rem', width: '300px' }}>
+                        <Input 
+                            placeholder="Filter by Reg Code, Name, Email..." 
+                            value={historySearchTerm}
+                            onChange={(e) => setHistorySearchTerm(e.target.value)}
+                        />
                     </div>
                 </div>
 
-                {checkins.length > 0 ? (
-                    <Table columns={columns} data={checkins} keyExtractor={(row) => row.id} />
+                {checkins.length > 0 || historySearchTerm ? (
+                    <Table 
+                        columns={columns} 
+                        data={checkins} 
+                        keyExtractor={(row) => row.id} 
+                        onRowClick={(row) => navigate(`/registrations/${row.registration_id}`)}
+                        emptyMessage={historySearchTerm ? 'No check-ins match your search.' : 'No participants have been checked in for this workshop.'}
+                    />
                 ) : (
                     <EmptyState 
                         icon={ClipboardCheck}

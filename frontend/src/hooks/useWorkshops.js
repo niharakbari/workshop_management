@@ -7,11 +7,11 @@ export const useWorkshops = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    const fetchWorkshops = useCallback(async (search = '', status = '') => {
+    const fetchWorkshops = useCallback(async (search = '', status = '', phase = '') => {
         setIsLoading(true);
         setError(null);
         try {
-            const data = await workshopApi.getWorkshops(search, status);
+            const data = await workshopApi.getWorkshops(search, status, phase);
             setWorkshops(data.data);
             return data.data;
         } catch (err) {

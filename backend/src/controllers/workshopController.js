@@ -40,7 +40,8 @@ exports.createWorkshop = (req, res, next) => {
 exports.getAllWorkshops = (req, res, next) => {
     const filters = {
         status: req.query.status,
-        search: req.query.search
+        search: req.query.search,
+        phase: req.query.phase
     };
 
     workshopModel.findAll(filters, (err, rows) => {
@@ -62,9 +63,21 @@ exports.getWorkshopById = (req, res, next) => {
             return next(new AppError("Workshop not found", 404));
         }
 
-        res.status(200).json({
-            success: true,
-            data: rows[0]
+        const workshop = rows[0];
+
+        workshopModel.getStats(req.params.id, (statsErr, stats) => {
+            if (statsErr) return next(statsErr);
+
+            // Calculate available capacity on the backend as requested
+            stats.available_capacity = workshop.capacity - stats.total_registrations;
+
+            res.status(200).json({
+                success: true,
+                data: {
+                    ...workshop,
+                    stats: stats
+                }
+            });
         });
     });
 };

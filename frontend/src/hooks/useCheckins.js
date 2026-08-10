@@ -7,14 +7,19 @@ export const useCheckins = () => {
     const [error, setError] = useState(null);
     const [totalCheckedIn, setTotalCheckedIn] = useState(0);
 
-    const fetchCheckins = useCallback(async (workshopId) => {
+    const fetchCheckins = useCallback(async (workshopId, search = '', limit = null, offset = null) => {
         setIsLoading(true);
         setError(null);
         try {
-            const response = await checkinApi.getHistory(workshopId);
+            const params = {};
+            if (search) params.search = search;
+            if (limit !== null) params.limit = limit;
+            if (offset !== null) params.offset = offset;
+            
+            const response = await checkinApi.getHistory(workshopId, params);
             if (response.status === 'success') {
                 setCheckins(response.data);
-                setTotalCheckedIn(response.results);
+                setTotalCheckedIn(response.total || 0);
             }
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to fetch check-in history');
@@ -41,12 +46,31 @@ export const useCheckins = () => {
         }
     };
 
+    const checkOutParticipant = async (workshopId, checkinId) => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const response = await checkinApi.checkOut(checkinId);
+            if (response.status === 'success') {
+                // Refresh history after successful checkout
+                await fetchCheckins(workshopId);
+                return response.data;
+            }
+        } catch (err) {
+            setError(err.response?.data?.message || 'Failed to check out participant');
+            throw err;
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     return {
         checkins,
         totalCheckedIn,
         isLoading,
         error,
         fetchCheckins,
-        checkInParticipant
+        checkInParticipant,
+        checkOutParticipant
     };
 };

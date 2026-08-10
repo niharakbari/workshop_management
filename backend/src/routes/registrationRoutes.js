@@ -12,8 +12,8 @@ router.use(protect);
 router.get("/", registrationController.getAllRegistrations);
 router.get("/:id", registrationController.getRegistrationById);
 
-// All other routes restricted to ADMIN
-router.use(restrictTo("ADMIN"));
+// All other routes restricted to ADMIN and STAFF
+router.use(restrictTo("ADMIN", "STAFF"));
 
 router.post(
     "/",

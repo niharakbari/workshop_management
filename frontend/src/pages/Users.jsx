@@ -11,15 +11,19 @@ import toast from 'react-hot-toast';
 
 const Users = () => {
     const { user } = useAuth();
-    const { users, isLoading, fetchUsers, updateRole } = useUsers();
+    const { users, isLoading, fetchUsers, updateRole, removeUser } = useUsers();
     
     const [search, setSearch] = useState('');
     const [roleFilter, setRoleFilter] = useState('');
     
     // Modal states
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+    const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
     const [selectedRole, setSelectedRole] = useState('');
+    
+    const [isUserDetailsOpen, setIsUserDetailsOpen] = useState(false);
+    const [selectedUserForDetails, setSelectedUserForDetails] = useState(null);
 
     useEffect(() => {
         const debounce = setTimeout(() => {
@@ -48,6 +52,26 @@ const Users = () => {
             setIsConfirmOpen(false);
             setSelectedUser(null);
             setSelectedRole('');
+        }
+    };
+
+    const handleDeleteRequest = (targetUser) => {
+        if (targetUser.id === user.id) {
+            toast.error("You cannot delete your own account.");
+            return;
+        }
+        setSelectedUser(targetUser);
+        setIsDeleteConfirmOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!selectedUser) return;
+        
+        const success = await removeUser(selectedUser.id);
+        if (success) {
+            setIsDeleteConfirmOpen(false);
+            setSelectedUser(null);
+            setIsUserDetailsOpen(false);
         }
     };
 
@@ -87,7 +111,7 @@ const Users = () => {
                 }
                 
                 return (
-                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }} onClick={(e) => e.stopPropagation()}>
                         <select 
                             className="form-input" 
                             style={{ padding: '0.25rem 0.5rem', height: '32px', width: '120px', fontSize: '0.875rem' }}
@@ -98,6 +122,9 @@ const Users = () => {
                             <option value="STAFF">Staff</option>
                             <option value="VIEWER">Viewer</option>
                         </select>
+                        <Button size="sm" variant="danger" onClick={() => handleDeleteRequest(row)} title="Delete User">
+                            Delete
+                        </Button>
                     </div>
                 );
             }
@@ -149,6 +176,10 @@ const Users = () => {
                     columns={columns} 
                     data={users} 
                     emptyMessage="No users found matching your criteria."
+                    onRowClick={(row) => {
+                        setSelectedUserForDetails(row);
+                        setIsUserDetailsOpen(true);
+                    }}
                 />
             )}
 
@@ -181,6 +212,69 @@ const Users = () => {
                         </p>
                     )}
                 </div>
+            </Modal>
+
+            <Modal
+                isOpen={isDeleteConfirmOpen}
+                onClose={() => setIsDeleteConfirmOpen(false)}
+                title="Confirm User Deletion"
+                footer={
+                    <>
+                        <Button variant="secondary" onClick={() => setIsDeleteConfirmOpen(false)}>Cancel</Button>
+                        <Button variant="danger" onClick={confirmDelete} isLoading={isLoading}>
+                            Delete User
+                        </Button>
+                    </>
+                }
+            >
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '1rem', padding: '1rem 0' }}>
+                    <ShieldAlert size={48} style={{ color: 'var(--danger)' }} />
+                    <p style={{ margin: 0 }}>
+                        Are you sure you want to completely delete the user <strong>{selectedUser?.name}</strong>?
+                    </p>
+                    <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--danger)' }}>
+                        This action is irreversible. If they are linked to existing workshops or check-ins, the deletion will be prevented.
+                    </p>
+                </div>
+            </Modal>
+
+            <Modal
+                isOpen={isUserDetailsOpen}
+                onClose={() => setIsUserDetailsOpen(false)}
+                title="User Details"
+            >
+                {selectedUserForDetails && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                            <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: 600 }}>
+                                {selectedUserForDetails.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                                <h3 style={{ margin: 0, fontSize: '1.25rem' }}>{selectedUserForDetails.name}</h3>
+                                <div style={{ color: 'var(--text-muted)' }}>{selectedUserForDetails.email}</div>
+                            </div>
+                        </div>
+                        
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                            <div className="user-info-row">
+                                <span className="user-info-label">Role</span>
+                                <span className="user-info-value">{getRoleBadge(selectedUserForDetails.role)}</span>
+                            </div>
+                            <div className="user-info-row">
+                                <span className="user-info-label">Account Created</span>
+                                <span className="user-info-value">{new Date(selectedUserForDetails.created_at).toLocaleString()}</span>
+                            </div>
+                            <div className="user-info-row">
+                                <span className="user-info-label">Last Updated</span>
+                                <span className="user-info-value">{new Date(selectedUserForDetails.updated_at).toLocaleString()}</span>
+                            </div>
+                        </div>
+                        
+                        <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
+                            <Button variant="secondary" onClick={() => setIsUserDetailsOpen(false)}>Close</Button>
+                        </div>
+                    </div>
+                )}
             </Modal>
         </div>
     );

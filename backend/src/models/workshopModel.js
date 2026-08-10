@@ -40,6 +40,29 @@ const findAll = (filters, callback) => {
         params.push(searchTerm, searchTerm);
     }
 
+    if (filters.phase) {
+        switch (filters.phase) {
+            case 'ongoing':
+                sql += " AND start_datetime <= NOW() AND end_datetime >= NOW()";
+                break;
+            case 'upcoming':
+                sql += " AND start_datetime > NOW()";
+                break;
+            case 'cancelled':
+                sql += " AND status = 'CANCELLED'";
+                break;
+            case 'open_for_registration':
+                sql += " AND status = 'OPEN' AND registration_start <= NOW() AND registration_end >= NOW()";
+                break;
+            case 'registration_phase':
+                sql += " AND registration_start <= NOW() AND registration_end >= NOW()";
+                break;
+            case 'completed':
+                sql += " AND end_datetime < NOW()";
+                break;
+        }
+    }
+
     sql += " ORDER BY start_datetime DESC";
 
     db.query(sql, params, callback);
@@ -84,6 +107,21 @@ const deleteById = (id, callback) => {
     db.query("DELETE FROM workshops WHERE id = ?", [id], callback);
 };
 
+const getStats = (id, callback) => {
+    const sql = `
+        SELECT 
+            (SELECT COUNT(*) FROM registrations WHERE workshop_id = ?) as total_registrations,
+            (SELECT GREATEST(0, w.capacity - (SELECT COUNT(*) FROM registrations r WHERE r.workshop_id = w.id AND r.status != 'CANCELLED')) FROM workshops w WHERE w.id = ?) as available_capacity,
+            (SELECT COUNT(*) FROM checkins c JOIN registrations r ON c.registration_id = r.id WHERE r.workshop_id = ?) as total_checkins,
+            (SELECT COUNT(*) FROM checkins c JOIN registrations r ON c.registration_id = r.id WHERE r.workshop_id = ? AND c.checked_out_at IS NULL) as present,
+            (SELECT COUNT(*) FROM checkins c JOIN registrations r ON c.registration_id = r.id WHERE r.workshop_id = ? AND c.checked_out_at IS NOT NULL) as checked_out
+    `;
+    db.query(sql, [id, id, id, id, id], (err, results) => {
+        if (err) return callback(err);
+        callback(null, results[0] || { total_registrations: 0, total_checkins: 0, present: 0, checked_out: 0 });
+    });
+};
+
 module.exports = {
     create,
     findById,
@@ -91,5 +129,6 @@ module.exports = {
     update,
     updateStatus,
     updateBanner,
-    deleteById
+    deleteById,
+    getStats
 };

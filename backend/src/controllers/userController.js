@@ -89,3 +89,55 @@ exports.updateUserRole = (req, res, next) => {
         }
     });
 };
+
+exports.deleteUser = (req, res, next) => {
+    const targetUserId = parseInt(req.params.id, 10);
+    const requestingUserId = req.user.id;
+
+    // Cannot delete yourself
+    if (targetUserId === requestingUserId) {
+        return next(new AppError("You cannot delete your own account", 403));
+    }
+
+    userModel.findById(targetUserId, (err, rows) => {
+        if (err) return next(err);
+        if (rows.length === 0) {
+            return next(new AppError("User not found", 404));
+        }
+
+        const targetUser = rows[0];
+
+        // Rule 2: Cannot delete the last ADMIN
+        if (targetUser.role === 'ADMIN') {
+            userModel.countAdmins((countErr, adminCount) => {
+                if (countErr) return next(countErr);
+                
+                if (adminCount <= 1) {
+                    return next(new AppError("Cannot delete the last ADMIN in the system", 403));
+                }
+                
+                proceedWithDelete();
+            });
+        } else {
+            proceedWithDelete();
+        }
+
+        function proceedWithDelete() {
+            userModel.deleteById(targetUserId, (deleteErr) => {
+                // If a user has created workshops or checked in people, it will fail due to foreign key constraints,
+                // unless ON DELETE CASCADE is set on the DB. If it fails due to foreign key, return nice error.
+                if (deleteErr) {
+                    if (deleteErr.code === 'ER_ROW_IS_REFERENCED_2') {
+                        return next(new AppError("Cannot delete user because they are referenced by existing workshops or check-ins.", 400));
+                    }
+                    return next(deleteErr);
+                }
+
+                res.status(200).json({
+                    success: true,
+                    message: "User deleted successfully"
+                });
+            });
+        }
+    });
+};

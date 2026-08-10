@@ -1,7 +1,6 @@
 const db = require("../config/database");
 
 const saveRefreshToken = (
-    userId,
     refreshToken,
     expiresAt,
     callback
@@ -11,14 +10,12 @@ const saveRefreshToken = (
         `
         INSERT INTO refresh_tokens
         (
-            user_id,
             refresh_token,
             expires_at
         )
-        VALUES (?, ?, ?)
+        VALUES (?, ?)
         `,
         [
-            userId,
             refreshToken,
             expiresAt
         ],
@@ -28,49 +25,24 @@ const saveRefreshToken = (
 };
 
 const findRefreshToken = (refreshToken, callback) => {
-
-    db.query(
-        `
-        SELECT *
-        FROM refresh_tokens
-        WHERE refresh_token = ?
-        LIMIT 1
-        `,
-        [refreshToken],
-        callback
-    );
-
+    db.query("SELECT * FROM refresh_tokens WHERE refresh_token = ? LIMIT 1", [refreshToken], callback);
 };
 
-const deleteRefreshToken = (refreshToken, callback) => {
-
-    db.query(
-        `
-        DELETE FROM refresh_tokens
-        WHERE refresh_token = ?
-        `,
-        [refreshToken],
-        callback
-    );
-
+const deleteRefreshToken = (id, callback) => {
+    db.query("DELETE FROM refresh_tokens WHERE id = ?", [id], callback);
 };
 
-const deleteUserRefreshTokens = (userId, callback) => {
-
+const updateRefreshToken = (id, newToken, newExpiresAt, callback) => {
     db.query(
-        `
-        DELETE FROM refresh_tokens
-        WHERE user_id = ?
-        `,
-        [userId],
+        "UPDATE refresh_tokens SET refresh_token = ?, expires_at = ? WHERE id = ?",
+        [newToken, newExpiresAt, id],
         callback
     );
-
 };
 
 module.exports = {
     saveRefreshToken,
     findRefreshToken,
     deleteRefreshToken,
-    deleteUserRefreshTokens
+    updateRefreshToken
 };

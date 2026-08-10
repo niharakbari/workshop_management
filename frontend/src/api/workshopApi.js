@@ -1,9 +1,10 @@
 import axiosInstance from './axios';
 
-export const getWorkshops = async (search = '', status = '') => {
+export const getWorkshops = async (search = '', status = '', phase = '') => {
     const params = new URLSearchParams();
     if (search) params.append('search', search);
     if (status) params.append('status', status);
+    if (phase) params.append('phase', phase);
     
     const response = await axiosInstance.get(`/api/workshops?${params.toString()}`);
     return response.data;
